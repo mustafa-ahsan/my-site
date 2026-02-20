@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiography Master (Thorax & Abdomen)</title>
+    
+    <!-- تحميل مكتبات React و Tailwind مباشرة لتشغيل التطبيق بدون سيرفر -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* أنماط مخصصة لدعم الخطوط وحركة البطاقات ثلاثية الأبعاد */
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+        body { font-family: 'Tajawal', sans-serif; }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 pb-12">
+    
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- الأيقونات (تم تحويلها لـ SVG لتعمل في أي موقع بدون تحميل خارجي) ---
+        const BookOpen = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
+        const BrainCircuit = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M9 13a4.5 4.5 0 0 0 3-4.14"/><path d="M15.337 17.175A4.5 4.5 0 0 0 18 18"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4.14"/><path d="M8.663 17.175A4.5 4.5 0 0 1 6 18"/></svg>;
+        const ChevronDown = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>;
+        const ChevronUp = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m18 15-6-6-6 6"/></svg>;
+        const CheckCircle = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+        const RotateCcw = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
+
+        // --- البيانات (محدثة بنسبة 100% لتشمل أدق التفاصيل من الملف) ---
+        const courseData = [
+          {
+            id: 'general',
+            title: 'General Indications & Modalities (Pharynx & Larynx)',
+            titleAr: 'دواعي الفحص والطرائق العامة (البلعوم والحنجرة)',
+            content: [
+              { key: 'Indications', keyAr: 'دواعي الفحص', value: 'Investigates soft-tissue swellings, air passage effects, foreign bodies, and laryngeal trauma.', valueAr: 'يفحص تورمات الأنسجة الرخوة، وتأثيرات ممرات الهواء، والأجسام الغريبة، وصدمات الحنجرة.' },
+              { key: 'Advanced Modalities', keyAr: 'الطرائق المتقدمة', value: 'Tomography, CT, or MRI may be needed for full evaluation.', valueAr: 'قد تكون هناك حاجة للتصوير المقطعي أو المفراس (CT) أو الرنين المغناطيسي (MRI) للتقييم الكامل.' },
+              { key: 'Standard Practice', keyAr: 'الممارسة القياسية', value: 'Two projections: Antero-posterior (AP) and Lateral.', valueAr: 'وضعيتان قياسيتان: أمامي-خلفي (AP) وجانبي (Lateral).' },
+              { key: 'Imaging System', keyAr: 'نظام التصوير', value: 'CR (24x30-cm cassette) or DDR detector systems.', valueAr: 'أنظمة الأشعة المحوسبة CR (كاسيت 24×30 سم) أو أنظمة الكاشف الرقمي DDR.' }
+            ]
+          },
+          {
+            id: 'larynx_ap',
+            title: 'Pharynx and Larynx: AP Projection',
+            titleAr: 'البلعوم والحنجرة: الوضعية الأمامية-الخلفية (AP)',
+            content: [
+              { key: 'Patient Position', keyAr: 'وضعية المريض', value: 'Patient lies supine. Median sagittal plane coincides with the central long axis of the couch.', valueAr: 'يستلقي المريض على ظهره. يتطابق المستوى السهمي الناصف مع المحور الطولي المركزي للسرير.' },
+              { key: 'Head Position', keyAr: 'وضعية الرأس', value: 'Chin raised to show soft tissues below the mandible. Radiographic baseline adjusted to 20° from the vertical.', valueAr: 'رفع الذقن لإظهار الأنسجة الرخوة أسفل الفك السفلي. تعديل خط الأساس الإشعاعي إلى 20 درجة من الوضع العمودي.' },
+              { key: 'Receptor Centering', keyAr: 'مركز المستقبل', value: 'At the level of the 4th cervical vertebra (C4).', valueAr: 'عند مستوى الفقرة العنقية الرابعة (C4).' },
+              { key: 'Beam Direction', keyAr: 'اتجاه الشعاع', value: 'Collimated vertical beam directed 10° cranially.', valueAr: 'شعاع عمودي محدد موجه 10 درجات نحو الرأس (cranially).' },
+              { key: 'Exposure/Breathing', keyAr: 'التعرض/التنفس', value: 'Made on forced expiration (Valsalva manoeuvre).', valueAr: 'يتم أثناء الزفير القوي (مناورة فالسالفا).' },
+              { key: 'Coverage', keyAr: 'التغطية', value: 'From the occipital bone to the 7th cervical vertebra (C7).', valueAr: 'من العظم القذالي (مؤخرة الرأس) إلى الفقرة العنقية السابعة (C7).' },
+              { key: 'Technical Notes', keyAr: 'ملاحظات فنية', value: 'Can use Bucky grid. May obscure small foreign bodies due to overlying spine. High kVp used to reduce contrast caused by air.', valueAr: 'يمكن استخدام شبكة بوكي. قد تخفي هذه الوضعية الأجسام الغريبة الصغيرة بسبب تراكب العمود الفقري. يُستخدم جهد عالي (High kVp) لتقليل التباين الناتج عن الهواء.' }
+            ]
+          },
+          {
+            id: 'larynx_lat',
+            title: 'Pharynx and Larynx: Lateral Projection',
+            titleAr: 'البلعوم والحنجرة: الوضعية الجانبية (Lateral)',
+            content: [
+              { key: 'Patient Position', keyAr: 'وضعية المريض', value: 'Stands or sits with either shoulder against cassette. Median sagittal plane parallel to receptor.', valueAr: 'يقف أو يجلس المريض مع وضع أي من الكتفين مقابل الكاسيت. المستوى السهمي الناصف موازٍ للمستقبل.' },
+              { key: 'Head Position', keyAr: 'وضعية الرأس', value: 'Jaw slightly raised. Two 45° pads may be used for immobilization. Head and trunk must remain still.', valueAr: 'رفع الفك قليلاً. يمكن استخدام وسادتين بزاوية 45 درجة للتثبيت. يجب أن يظل الرأس والجذع ثابتين.' },
+              { key: 'Receptor Centering', keyAr: 'مركز المستقبل', value: 'Level of thyroid cartilage prominence (C4). Reference: 2.5 cm posterior to angle of mandible.', valueAr: 'عند مستوى بروز الغضروف الدرقي (C4). النقطة المرجعية: 2.5 سم خلف زاوية الفك السفلي.' },
+              { key: 'Maneuvers', keyAr: 'المناورات', value: 'Shoulder Maneuver: Depress shoulders forcibly before exposure to clear C7.', valueAr: 'مناورة الكتف: يخفض المريض كتفيه بقوة قبل التعرض مباشرة لتوضيح مستوى الفقرة C7.' },
+              { key: 'Exposure/Breathing', keyAr: 'التعرض/التنفس', value: 'Made on forced expiration (Valsalva manoeuvre).', valueAr: 'يتم أثناء الزفير القوي (مناورة فالسالفا).' },
+              { key: 'Beam Direction', keyAr: 'اتجاه الشعاع', value: 'Horizontal central ray, centered below mastoid process at thyroid cartilage (C4).', valueAr: 'شعاع مركزي أفقي، ممركز أسفل النتوء الحلمي (الخشاء) عند الغضروف الدرقي (C4).' },
+              { key: 'Image Quality & Coverage', keyAr: 'جودة الصورة والتغطية', value: 'Coverage from skull base to root of neck (C7). Must be true lateral; flexion or obliquity can mimic/mask pathology.', valueAr: 'تغطية من قاعدة الجمجمة إلى جذر الرقبة (C7). يجب أن تكون جانبية حقيقية؛ لأن الانثناء أو الميل قد يحاكي/يخفي المرض.' },
+              { key: 'Diagnostic Signs', keyAr: 'علامات تشخيصية', value: 'Prevertebral soft tissue (C4-C6) wider than vertebral body indicates swelling (often only sign of lucent foreign body).', valueAr: 'الأنسجة الرخوة أمام الفقرات (C4-C6) إذا كانت أعرض من جسم الفقرة فهذا يشير إلى تورم (وغالباً ما يكون العلامة الوحيدة لجسم غريب شفاف).' },
+              { key: 'Clinical Considerations', keyAr: 'اعتبارات سريرية', value: 'Disparate calcification of cartilages may mimic foreign bodies. Precise collimation required to exclude eyes. Bucky grid may be employed.', valueAr: 'التكلس غير المتكافئ للغضاريف قد يحاكي الأجسام الغريبة. يجب التحديد الدقيق للشعاع لاستبعاد العيون. يمكن استخدام شبكة بوكي.' }
+            ]
+          },
+          {
+            id: 'trachea_ap',
+            title: 'Trachea & Thoracic Inlet: AP Projection',
+            titleAr: 'القصبة الهوائية ومدخل الصدر: الوضعية الأمامية-الخلفية (AP)',
+            content: [
+              { key: 'Indications', keyAr: 'دواعي الفحص', value: 'Soft-tissue swellings in neck/upper thorax & effects on air passages (e.g., retrosternal goitre).', valueAr: 'تورمات الأنسجة الرخوة في الرقبة/أعلى الصدر وتأثيراتها على ممرات الهواء (مثل تضخم الغدة الدرقية خلف القص).' },
+              { key: 'Technical Challenge', keyAr: 'التحدي الفني', value: 'Two different thicknesses (neck vs upper thorax). Solution: High kVp technique for single image.', valueAr: 'سماكتان مختلفتان (الرقبة مقابل أعلى الصدر). الحل: استخدام تقنية الجهد العالي (High kVp) للحصول على صورة واحدة.' },
+              { key: 'Modality Details', keyAr: 'تفاصيل الطريقة', value: 'Bucky DDR or CR with moving grid. Advanced options: CT, tomography, or digital volume radiography.', valueAr: 'أنظمة Bucky DDR أو CR مع شبكة متحركة. الخيارات المتقدمة: المفراس (CT)، التصوير المقطعي، أو التصوير الحجمي الرقمي.' },
+              { key: 'Patient Position', keyAr: 'وضعية المريض', value: 'Supine. Chin raised to clear soft tissues. Radiographic baseline 20° from vertical.', valueAr: 'استلقاء على الظهر. رفع الذقن لإبعاد الأنسجة الرخوة. خط الأساس الإشعاعي 20 درجة من الوضع العمودي.' },
+              { key: 'Receptor Centering', keyAr: 'مركز المستقبل', value: 'Centred at the level of the sternal notch.', valueAr: 'ممركز عند مستوى الثلمة الوداجية للقص (sternal notch).' },
+              { key: 'Beam Direction', keyAr: 'اتجاه الشعاع', value: 'Collimated vertical beam at midline, sternal notch.', valueAr: 'شعاع عمودي محدد عند خط الوسط للثلمة الوداجية.' },
+              { key: 'Exposure/Breathing', keyAr: 'التعرض/التنفس', value: 'Made on forced expiration (Valsalva manoeuvre).', valueAr: 'يتم أثناء زفير قوي (مناورة فالسالفا).' },
+              { key: 'Coverage', keyAr: 'التغطية', value: 'Full length of trachea, extend field below T7.', valueAr: 'الطول الكامل للقصبة الهوائية، وتوسيع الحقل لأسفل الفقرة الصدرية السابعة (T7).' }
+            ]
+          },
+          {
+            id: 'trachea_lat',
+            title: 'Trachea: Lateral Projection',
+            titleAr: 'القصبة الهوائية: الوضعية الجانبية',
+            content: [
+              { key: 'Patient Position', keyAr: 'وضعية المريض', value: 'Stands or sits (erect) to move shoulders away. Median sagittal plane parallel to receptor.', valueAr: 'يقف أو يجلس (منتصباً) لإبعاد الكتفين عن منطقة الاهتمام. المستوى السهمي الناصف موازٍ للمستقبل.' },
+              { key: 'Receptor Centering', keyAr: 'مركز المستقبل', value: 'Level of sternal notch. Reference: 5.0 cm posterior to sternal notch.', valueAr: 'مستوى الثلمة الوداجية للقص. النقطة المرجعية: 5.0 سم خلف الثلمة الوداجية.' },
+              { key: 'Maneuvers', keyAr: 'المناورات', value: 'Shoulders distracted posteriorly (patient clasps hands behind back and pulls arms backward).', valueAr: 'سحب الكتفين للخلف (يشبك المريض يديه خلف ظهره ويسحب ذراعيه للخلف).' },
+              { key: 'Beam Direction', keyAr: 'اتجاه الشعاع', value: 'Collimated horizontal ray at vertical central line, level of sternal notch.', valueAr: 'شعاع أفقي محدد عند الخط المركزي العمودي، بمستوى الثلمة الوداجية للقص.' },
+              { key: 'Exposure/Breathing', keyAr: 'التعرض/التنفس', value: 'Forced expiration. High kVp technique used to balance contrast.', valueAr: 'زفير قوي. تُستخدم تقنية الجهد العالي (High kVp) لموازنة التباين بين الرقبة والصدر العلوي الكثيف.' },
+              { key: 'Clinical Value', keyAr: 'القيمة السريرية', value: 'Confirms retrosternal extension of thyroid gland. Anterior mediastinal mass increases density in anterior window.', valueAr: 'يؤكد امتداد الغدة الدرقية خلف القص. كتلة المنصف الأمامي تزيد الكثافة في "النافذة المنصفية الأمامية".' },
+              { key: 'Artifacts & Alternatives', keyAr: 'الشوائب والبدائل المتقدمة', value: 'Superimposed arm soft tissue can mimic mass if shoulders not pulled back. Advanced alternatives: Bronchoscopy or Multi-slice CT with 3D reconstruction.', valueAr: 'الأنسجة الرخوة للذراع قد تحاكي وجود كتلة إذا لم تُسحب الكتفان للخلف كفاية. البدائل المتقدمة: تنظير القصبات أو المفراس متعدد المقاطع مع إعادة البناء ثلاثي الأبعاد (3D).' }
+            ]
+          },
+          {
+            id: 'lungs_ap_erect',
+            title: 'Lungs: AP Erect Projection',
+            titleAr: 'الرئتان: الوضعية الأمامية-الخلفية (منتصب)',
+            content: [
+              { key: 'Purpose', keyAr: 'الغرض', value: 'Alternative to PA erect when patient condition makes standing/sitting for PA unsafe. Supported on trolley against vertical Bucky.', valueAr: 'بديل لوضعية PA منتصباً عندما تكون حالة المريض لا تسمح بذلك بأمان. يُدعم بالجلوس على نقالة مقابل بوكي العمودي.' },
+              { key: 'Patient Position', keyAr: 'وضعية المريض', value: 'Standing or sitting, back against vertical Bucky. Upper edge above lung apices. Median sagittal plane perpendicular (90°).', valueAr: 'وقوف أو جلوس، الظهر مقابل البوكي العمودي. الحافة العلوية فوق قمم الرئة. المستوى السهمي الناصف عمودي (90 درجة).' },
+              { key: 'Arm/Shoulder Position', keyAr: 'وضعية الذراع/الكتف', value: 'Shoulders rolled downward and forward. Backs of hands below hips, elbows forward. Scapulae projected clear of lung fields.', valueAr: 'تدوير الكتفين لأسفل وللأمام. ظهر اليدين أسفل الوركين، المرفقان للأمام. إبعاد لوحي الكتف عن حقول الرئتين.' },
+              { key: 'Beam Direction', keyAr: 'اتجاه الشعاع', value: 'Horizontal collimated beam. Perpendicular to sternum. Centered midway between sternal notch and xiphisternum.', valueAr: 'شعاع أفقي محدد. متعامد على القص. ممركز في منتصف المسافة بين الثلمة الوداجية والناتئ الرهابي (xiphisternum).' },
+              { key: 'Exposure/Breathing', keyAr: 'التعرض/التنفس', value: 'Exposure taken on full inspiration.', valueAr: 'يتم أخذ التعرض أثناء شهيق كامل.' },
+              { key: 'Radiological Note', keyAr: 'ملاحظة إشعاعية', value: 'Heart is farther from receptor -> Increased magnification -> Assessment of heart size is less accurate compared to PA.', valueAr: 'القلب أبعد عن المستقبل -> زيادة في تكبير ظل القلب -> تقييم حجم القلب يكون أقل دقة مقارنة بوضعية PA.' }
+            ]
+          },
+          {
+            id: 'lungs_ap_supine',
+            title: 'Lungs: AP Supine Projection',
+            titleAr: 'الرئتان: الوضعية الأمامية-الخلفية (الاستلقاء)',
+            content: [
+              { key: 'Patient Position', keyAr: 'وضعية المريض', value: 'Supine. Cassette carefully under chest, upper edge above apices (C7). Head on pillow with chin raised.', valueAr: 'الاستلقاء على الظهر. إدخال الكاسيت بحذر تحت الصدر، الحافة العلوية فوق القمم (بروز C7). الرأس على وسادة مع رفع الذقن.' },
+              { key: 'Body Alignment', keyAr: 'محاذاة الجسم', value: 'Median sagittal plane perpendicular (90°). Pelvis checked to avoid rotation. Arms beside trunk.', valueAr: 'المستوى السهمي الناصف عمودي (90°). فحص الحوض لتجنب الدوران. الذراعان بجانب الجذع.' },
+              { key: 'Beam Direction', keyAr: 'اتجاه الشعاع', value: 'Vertical collimated beam. Perpendicular to sternum. Centered midway between sternal notch and xiphisternum.', valueAr: 'شعاع عمودي محدد. متعامد على القص. ممركز في منتصف المسافة بين الثلمة الوداجية والناتئ الرهابي.' }
+            ]
+          },
+          {
+            id: 'lungs_ap_semi',
+            title: 'Lungs: AP Semi-Erect Projection',
+            titleAr: 'الرئتان: الوضعية الأمامية-الخلفية (شبه منتصب)',
+            content: [
+              { key: 'Purpose', keyAr: 'الغرض', value: 'Alternative to AP erect for patients too ill to stand/sit without support. 35x43 cm CR cassette selected.', valueAr: 'بديل لـ AP منتصب للمرضى المرضى جداً للوقوف/الجلوس بدون دعم. يتم اختيار كاسيت CR مقاس 35×43 سم.' },
+              { key: 'Patient Position', keyAr: 'وضعية المريض', value: 'Semi-recumbent facing tube (elevation depends on condition). Foam pads used to prevent rotation. Median sagittal plane perpendicular.', valueAr: 'شبه مستلقٍ ومواجه للأنبوب (الارتفاع يعتمد على الحالة). تستخدم وسائد رغوية لمنع الدوران. المستوى السهمي الناصف عمودي.' },
+              { key: 'Arm/Shoulder Position', keyAr: 'وضعية الذراع/الكتف', value: 'Arms rotated medially, shoulders brought forward to project scapulae clear of lung fields.', valueAr: 'تدوير الذراعين للداخل، سحب الكتفين للأمام لإبعاد لوحي الكتف عن مساحة الرئتين.' },
+              { key: 'Beam Direction', keyAr: 'اتجاه الشعاع', value: 'Collimated horizontal beam perpendicular to receptor, THEN angled 5-10° caudally. Centered midway sternal notch to xiphisternum.', valueAr: 'شعاع أفقي متعامد على المستقبل، ثم يُوجّه بزاوية 5-10 درجات للأسفل (caudally). ممركز بين الثلمة الوداجية والناتئ الرهابي.' },
+              { key: 'Purpose of Angulation', keyAr: 'الغرض من الزاوية', value: 'To ensure max visualization of lung fields and prevent clavicles from obscuring the lung apices.', valueAr: 'لضمان أقصى رؤية لحقول الرئة، ولمنع عظام الترقوة من حجب قمم الرئتين.' }
+            ]
+          },
+          {
+            id: 'lungs_lat',
+            title: 'Lungs: Lateral Projection',
+            titleAr: 'الرئتان: الوضعية الجانبية',
+            content: [
+              { key: 'Clinical Importance', keyAr: 'الأهمية السريرية', value: 'Supplementary projection. Localizes lesion position & demonstrates anterior mediastinal masses not visible on PA.', valueAr: 'وضعية تكميلية. تحدد موقع الآفة وتُظهر كتل المنصف الأمامي غير المرئية في وضعية PA.' },
+              { key: 'Radiation Consideration', keyAr: 'الاعتبارات الإشعاعية', value: 'Not taken routinely due to additional patient radiation dose. (Currently, CT is commonly performed instead).', valueAr: 'لا تؤخذ بشكل روتيني بسبب الجرعة الإشعاعية الإضافية للمريض. (يُستخدم المفراس CT عادةً بدلاً منها حالياً).' },
+              { key: 'Patient Position', keyAr: 'وضعية المريض', value: 'Erect. Side under investigation against receptor. Median sagittal plane parallel to image receptor. 35x43 cm CR cassette.', valueAr: 'منتصب. الجانب المراد فحصه مقابل المستقبل. المستوى السهمي الناصف موازٍ للمستقبل. كاسيت 35×43 سم.' },
+              { key: 'Arm Position', keyAr: 'وضعية الذراع', value: 'Arms folded over the head or raised to rest on a horizontal support bar.', valueAr: 'الذراعان مطويتان فوق الرأس أو مرفوعتان للاستناد على عمود دعم أفقي.' },
+              { key: 'Centering / Coverage', keyAr: 'التمركز / التغطية', value: 'Mid-axillary line aligned with Bucky center. Receptor adjusted to include apices down to L1 vertebra.', valueAr: 'محاذاة خط منتصف الإبط مع مركز البوكي. يُضبط المستقبل ليشمل القمم لأسفل حتى الفقرة القطنية الأولى (L1).' },
+              { key: 'Beam Direction', keyAr: 'اتجاه الشعاع', value: 'Horizontal collimated beam. Directed perpendicular (90°) to middle of receptor. Centered at mid-axillary line.', valueAr: 'شعاع أفقي محدد. متعامد (90°) على منتصف المستقبل. ممركز عند خط منتصف الإبط.' }
+            ]
+          },
+          {
+            id: 'lungs_apical',
+            title: 'Lungs: Apical Projection (Apices View)',
+            titleAr: 'الرئتان: الوضعية القمية (رؤية القمم)',
+            content: [
+              { key: 'Purpose', keyAr: 'الغرض', value: 'Demonstrate opacities in apical region (when obscured by overlying ribs/clavicular shadows).', valueAr: 'إظهار العتامات في المنطقة القمية (عندما تحجبها تراكب الأضلاع أو ظلال الترقوة).' },
+              { key: 'PA Position Beam', keyAr: 'شعاع وضعية PA', value: 'Patient as standard PA. Collimated beam angled 30° caudally. Centered over C7 spinous process (level of sternal angle).', valueAr: 'المريض بوضعية PA القياسية. شعاع محدد بزاوية 30° للأسفل (caudally). ممركز فوق الناتئ الشوكي لـ C7 (مستوى الزاوية القصية).' },
+              { key: 'AP Position Beam', keyAr: 'شعاع وضعية AP', value: 'Patient as standard AP. Central ray angled 30° cranially. Directed toward the sternal angle.', valueAr: 'المريض بوضعية AP القياسية. شعاع مركزي بزاوية 30° للأعلى (cranially). موجه نحو الزاوية القصية.' },
+              { key: 'Goal of Angulation', keyAr: 'هدف الزاوية', value: 'Project clavicles above lung apices and allow clear visualization of the upper lobes.', valueAr: 'إبراز الترقوة فوق قمم الرئة والسماح برؤية واضحة للفصوص العلوية.' }
+            ]
+          },
+          {
+            id: 'lungs_lordotic',
+            title: 'Lungs: Lordotic Projection',
+            titleAr: 'الرئتان: الوضعية القعسية (Lordotic)',
+            content: [
+              { key: 'Purpose', keyAr: 'الغرض', value: 'Used to demonstrate Right middle-lobe collapse and Interlobar pleural effusion.', valueAr: 'تُستخدم لإظهار انهيار الفص الأوسط الأيمن، والانصباب الجنبي بين الفصوص.' },
+              { key: 'Anatomy Goal', keyAr: 'الهدف التشريحي', value: 'Patient positioned to make the middle-lobe fissure horizontal.', valueAr: 'توضع المريض بحيث يصبح شق الفص الأوسط أفقياً.' },
+              { key: 'Patient Position', keyAr: 'وضعية المريض', value: 'Initially positioned for PA. Clasps sides of vertical Bucky, bends backward at waist (dorsiflexion) approx 40° (varies).', valueAr: 'يبدأ كوضعية PA. يمسك جانبي البوكي العمودي، وينحني للخلف عند الخصر (العطف الظهري) بحوالي 40° (تختلف حسب المريض).' },
+              { key: 'Beam Direction', keyAr: 'اتجاه الشعاع', value: 'Horizontal beam. Directed perpendicular (90°) to the cassette. Centered toward the middle of the film.', valueAr: 'شعاع أفقي. متعامد (90°) على الكاسيت. ممركز نحو منتصف الفيلم.' },
+              { key: 'Radiographic Effect', keyAr: 'التأثير الإشعاعي', value: 'Projects clavicles above lung apices. Allows better visualization of middle lobe and upper lung regions.', valueAr: 'يبرز الترقوة فوق قمم الرئة. يسمح برؤية أفضل للفص الأوسط ومناطق الرئة العلوية.' }
+            ]
+          }
+        ];
+
+        const generateFlashcards = () => {
+          let cards = [];
+          courseData.forEach(topic => {
+            topic.content.forEach(item => {
+              const enTopic = topic.title.split(':')[0];
+              const arTopic = topic.titleAr.split(':')[0];
+              
+              cards.push({
+                topicEN: topic.title,
+                topicAR: topic.titleAr,
+                questionEN: `What is the ${item.key} for ${enTopic}?`,
+                questionAR: `ما هو/هي (${item.keyAr}) لـ ${arTopic}؟`,
+                answerEN: item.value,
+                answerAR: item.valueAr,
+                learned: false
+              });
+            });
+          });
+          return cards;
+        };
+
+        const flashcardsData = generateFlashcards();
+
+        function App() {
+          const [activeTab, setActiveTab] = useState('study'); 
+          const [expandedSections, setExpandedSections] = useState({});
+          
+          const [currentCard, setCurrentCard] = useState(0);
+          const [isFlipped, setIsFlipped] = useState(false);
+          const [cards, setCards] = useState(flashcardsData);
+
+          const toggleSection = (id) => {
+            setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
+          };
+
+          const nextCard = () => {
+            setIsFlipped(false);
+            setTimeout(() => {
+              setCurrentCard((prev) => (prev + 1) % cards.length);
+            }, 150);
+          };
+
+          const prevCard = () => {
+            setIsFlipped(false);
+            setTimeout(() => {
+              setCurrentCard((prev) => (prev === 0 ? cards.length - 1 : prev - 1));
+            }, 150);
+          };
+
+          const markLearned = () => {
+            const updatedCards = [...cards];
+            updatedCards[currentCard].learned = true;
+            setCards(updatedCards);
+            nextCard();
+          };
+
+          const resetProgress = () => {
+            setCards(cards.map(c => ({ ...c, learned: false })));
+            setCurrentCard(0);
+            setIsFlipped(false);
+          };
+
+          const learnedCount = cards.filter(c => c.learned).length;
+          const progressPercentage = Math.round((learnedCount / cards.length) * 100);
+
+          return (
+            <div>
+              <header className="bg-blue-700 text-white shadow-md sticky top-0 z-10">
+                <div className="max-w-4xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+                  <h1 className="text-2xl font-bold text-center">Radiography Master (Thorax & Abdomen)</h1>
+                  <p className="text-blue-200 text-center text-sm mt-1">بيئة تفاعلية شاملة لحفظ المادة العلمية للدكتور حسين داخل (إنجليزي - عربي)</p>
+                  
+                  <div className="flex justify-center mt-6 space-x-4 space-x-reverse">
+                    <button 
+                      onClick={() => setActiveTab('study')}
+                      className={`flex items-center px-4 py-2 rounded-lg transition-colors ${activeTab === 'study' ? 'bg-white text-blue-700 font-bold' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                    >
+                      <BookOpen className="w-5 h-5 ml-2" />
+                      دليل المراجعة المترجم
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('flashcards')}
+                      className={`flex items-center px-4 py-2 rounded-lg transition-colors ${activeTab === 'flashcards' ? 'bg-white text-blue-700 font-bold' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                    >
+                      <BrainCircuit className="w-5 h-5 ml-2" />
+                      بطاقات الحفظ (Flashcards)
+                    </button>
+                  </div>
+                </div>
+              </header>
+
+              <main className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+                
+                {activeTab === 'study' && (
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <p className="text-blue-800 text-sm">
+                        <strong>نصيحة للحفظ:</strong> تم وضع الترجمة العربية الدقيقة أسفل كل مصطلح إنجليزي لتسهيل الفهم وتثبيت الحفظ. تذكر أن المصطلحات الإنجليزية هي الأهم للامتحان!
+                      </p>
+                    </div>
+
+                    {courseData.map((section) => (
+                      <div key={section.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all">
+                        <button 
+                          onClick={() => toggleSection(section.id)}
+                          className="w-full px-6 py-4 flex justify-between items-center bg-white hover:bg-slate-50 focus:outline-none"
+                        >
+                          <div className="flex flex-col text-right w-full pr-4">
+                            <h2 className="text-lg font-bold text-slate-800" dir="ltr">{section.title}</h2>
+                            <h3 className="text-sm font-medium text-slate-500 mt-1">{section.titleAr}</h3>
+                          </div>
+                          {expandedSections[section.id] ? <ChevronUp className="text-blue-600 w-6 h-6 flex-shrink-0" /> : <ChevronDown className="text-slate-400 w-6 h-6 flex-shrink-0" />}
+                        </button>
+                        
+                        {expandedSections[section.id] && (
+                          <div className="px-6 pb-6 pt-2 border-t border-slate-100 bg-slate-50">
+                            <ul className="space-y-6">
+                              {section.content.map((item, index) => (
+                                <li key={index} className="flex flex-col bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                                  <div className="flex flex-col sm:flex-row sm:items-start text-left mb-3 pb-3 border-b border-slate-100" dir="ltr">
+                                    <span className="font-bold text-blue-700 sm:w-1/3 shrink-0 mb-1 sm:mb-0 pr-4">
+                                      {item.key}:
+                                    </span>
+                                    <span className="text-slate-700 sm:w-2/3 font-medium">
+                                      {item.value}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col sm:flex-row sm:items-start text-right" dir="rtl">
+                                    <span className="font-bold text-emerald-600 sm:w-1/3 shrink-0 mb-1 sm:mb-0 pl-4 text-sm">
+                                      {item.keyAr}:
+                                    </span>
+                                    <span className="text-slate-600 sm:w-2/3 text-sm leading-relaxed">
+                                      {item.valueAr}
+                                    </span>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'flashcards' && (
+                  <div className="flex flex-col items-center">
+                    
+                    <div className="w-full max-w-3xl mb-6">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-semibold text-slate-600">نسبة الحفظ: {progressPercentage}%</span>
+                        <span className="text-sm text-slate-500">{learnedCount} من {cards.length} بطاقة</span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2.5">
+                        <div className="bg-green-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
+                      </div>
+                      {progressPercentage === 100 && (
+                        <div className="mt-4 p-3 bg-green-100 text-green-800 rounded-lg text-center font-bold flex items-center justify-center">
+                          <CheckCircle className="ml-2 w-5 h-5" /> أسطورة! لقد أتممت حفظ كل المعلومات بنجاح.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end w-full max-w-3xl mb-4">
+                       <button onClick={resetProgress} className="text-sm flex items-center text-slate-500 hover:text-blue-600 transition-colors">
+                        <RotateCcw className="w-4 h-4 ml-1" /> إعادة تصفير التقدم
+                      </button>
+                    </div>
+
+                    <div className="w-full max-w-3xl perspective-1000">
+                      <div 
+                        onClick={() => setIsFlipped(!isFlipped)}
+                        className="relative w-full h-[450px] cursor-pointer transition-all duration-700 ease-in-out shadow-xl rounded-2xl transform-style-3d"
+                        style={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+                      >
+                        <div 
+                          className="absolute inset-0 w-full h-full bg-white border-2 border-blue-200 rounded-2xl flex flex-col justify-center items-center p-8 text-center backface-hidden"
+                        >
+                          <div className="absolute top-4 w-full px-6 flex flex-col items-center">
+                            <span className="text-xs font-bold text-blue-500 tracking-wider uppercase mb-1" dir="ltr">{cards[currentCard].topicEN}</span>
+                            <span className="text-xs font-medium text-slate-400">{cards[currentCard].topicAR}</span>
+                          </div>
+                          
+                          <div className="mt-8 space-y-4">
+                            <h3 className="text-2xl font-bold text-slate-800 leading-relaxed" dir="ltr">
+                              {cards[currentCard].questionEN}
+                            </h3>
+                            <h4 className="text-lg font-medium text-emerald-600 leading-relaxed">
+                              {cards[currentCard].questionAR}
+                            </h4>
+                          </div>
+
+                          <p className="absolute bottom-6 text-sm text-slate-400 flex items-center bg-slate-50 px-4 py-2 rounded-full">
+                            انقر لقلب البطاقة ومعرفة الإجابة <RotateCcw className="w-4 h-4 mr-2" />
+                          </p>
+                        </div>
+
+                        <div 
+                          className="absolute inset-0 w-full h-full bg-blue-700 border-2 border-blue-800 rounded-2xl flex flex-col justify-center items-center p-8 text-center text-white overflow-y-auto backface-hidden"
+                          style={{ transform: 'rotateY(180deg)' }}
+                        >
+                          <span className="absolute top-4 left-4 right-4 text-xs font-bold text-blue-300 tracking-wider uppercase" dir="ltr">
+                            Answer / الإجابة
+                          </span>
+                          
+                          <div className="space-y-6 w-full mt-4">
+                            <p className="text-xl font-bold leading-relaxed text-blue-50" dir="ltr">
+                              {cards[currentCard].answerEN}
+                            </p>
+                            <div className="w-16 h-1 bg-blue-500 mx-auto rounded-full flex-shrink-0"></div>
+                            <p className="text-lg font-medium leading-relaxed text-blue-200">
+                              {cards[currentCard].answerAR}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between w-full max-w-3xl mt-8">
+                      <button 
+                        onClick={prevCard}
+                        className="px-6 py-3 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 font-semibold shadow-sm transition-colors"
+                      >
+                        السابق
+                      </button>
+                      
+                      <button 
+                        onClick={markLearned}
+                        disabled={cards[currentCard].learned}
+                        className={`px-8 py-4 rounded-xl font-bold shadow-md flex items-center transition-transform transform active:scale-95 ${cards[currentCard].learned ? 'bg-emerald-100 text-emerald-600 cursor-not-allowed border border-emerald-200' : 'bg-emerald-500 hover:bg-emerald-600 text-white'}`}
+                      >
+                        <CheckCircle className="w-6 h-6 ml-2" />
+                        {cards[currentCard].learned ? 'تم الحفظ' : 'حفظتها!'}
+                      </button>
+
+                      <button 
+                        onClick={nextCard}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold shadow-sm transition-colors"
+                      >
+                        التالي
+                      </button>
+                    </div>
+
+                  </div>
+                )}
+
+              </main>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
