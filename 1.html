@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRI Hardware Explorer - مستكشف عتاد الرنين المغناطيسي</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .perspective-1000 { perspective: 1000px; }
+        .backface-hidden { backface-visibility: hidden; }
+        
+        #card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        #card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans p-2 md:p-6">
+
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="mb-6 bg-white p-6 rounded-3xl shadow-sm border-b-8 border-indigo-600">
+            <div class="flex items-center gap-4">
+                <div class="bg-indigo-600 p-3 rounded-2xl text-white">
+                    <i data-lucide="activity" class="w-10 h-10"></i>
+                </div>
+                <div class="text-right" dir="ltr">
+                    <h1 class="text-xl md:text-3xl font-black text-slate-800 tracking-tight text-left">MRI Hardware Explorer</h1>
+                    <h1 class="text-lg md:text-2xl font-bold text-indigo-600 text-left">مستكشف عتاد الرنين المغناطيسي</h1>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex flex-wrap gap-2 mb-8 p-1 bg-white rounded-2xl shadow-sm border">
+            <button onclick="switchTab('summary')" id="tab-summary" class="tab-btn flex-1 py-3 px-4 rounded-xl flex flex-col items-center justify-center transition-all bg-indigo-600 text-white">
+                <span class="font-bold text-sm">Summary</span>
+                <span class="text-xs font-medium">الملخص</span>
+            </button>
+            <button onclick="switchTab('cards')" id="tab-cards" class="tab-btn flex-1 py-3 px-4 rounded-xl flex flex-col items-center justify-center transition-all text-slate-500 hover:bg-slate-50">
+                <span class="font-bold text-sm">Flashcards</span>
+                <span class="text-xs font-medium">البطاقات</span>
+            </button>
+            <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn flex-1 py-3 px-4 rounded-xl flex flex-col items-center justify-center transition-all text-slate-500 hover:bg-slate-50">
+                <span class="font-bold text-sm">Quiz</span>
+                <span class="text-xs font-medium">الاختبار</span>
+            </button>
+        </div>
+
+        <!-- Content Sections -->
+        <div id="summary-content" class="tab-content space-y-8 pb-12">
+            <!-- Content will be injected by JavaScript -->
+        </div>
+
+        <div id="cards-content" class="tab-content hidden flex flex-col items-center py-10">
+            <div id="card-container" onclick="flipCard()" class="w-full max-w-xl h-80 cursor-pointer perspective-1000 relative group">
+                <div id="card-inner" class="relative w-full h-full text-center shadow-2xl rounded-[2.5rem]">
+                    <!-- Front -->
+                    <div class="absolute inset-0 bg-white rounded-[2.5rem] border-4 border-indigo-100 flex flex-col items-center justify-center p-8 backface-hidden">
+                        <span class="bg-indigo-100 text-indigo-600 px-4 py-1 rounded-full text-[10px] font-black mb-6 uppercase">QUESTION / سؤال</span>
+                        <p id="card-q-en" class="text-slate-400 text-sm italic mb-4 font-mono leading-relaxed text-left w-full" dir="ltr"></p>
+                        <p id="card-q-ar" class="text-xl md:text-2xl font-black text-slate-800 leading-tight"></p>
+                        <p class="mt-8 text-[10px] text-slate-300 tracking-[0.2em] uppercase font-bold animate-pulse">Click to Flip (انقر للقلب)</p>
+                    </div>
+                    <!-- Back -->
+                    <div class="absolute inset-0 bg-indigo-600 rounded-[2.5rem] flex flex-col items-center justify-center p-8 text-white rotate-y-180 backface-hidden">
+                        <span class="bg-white/20 px-4 py-1 rounded-full text-[10px] font-black mb-6 tracking-widest uppercase">ANSWER / إجابة</span>
+                        <p id="card-a-en" class="text-indigo-100 text-sm italic mb-4 font-mono leading-relaxed text-left w-full" dir="ltr"></p>
+                        <p id="card-a-ar" class="text-xl md:text-2xl font-black leading-tight"></p>
+                        <p class="mt-8 text-[10px] text-indigo-300 tracking-[0.2em] uppercase font-bold">Click to return (للعودة)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-4 mt-12">
+                <button onclick="prevCard()" class="px-8 py-3 bg-white text-slate-600 rounded-full shadow border font-bold hover:bg-slate-50 transition-all">Previous (السابق)</button>
+                <button onclick="nextCard()" class="px-8 py-3 bg-indigo-600 text-white rounded-full shadow-xl font-bold hover:bg-indigo-700 transition-all">Next (التالي)</button>
+            </div>
+        </div>
+
+        <div id="quiz-content" class="tab-content hidden max-w-3xl mx-auto bg-white p-6 md:p-12 rounded-[3rem] shadow-2xl border border-slate-100">
+            <div id="quiz-active">
+                <div class="mb-10 flex justify-between items-center">
+                    <span id="quiz-progress" class="text-[10px] font-black text-slate-300 tracking-widest uppercase" dir="ltr"></span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Score / النتيجة:</span>
+                        <span id="quiz-score" class="bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full text-xs font-black font-mono">0</span>
+                    </div>
+                </div>
+                <div class="text-center mb-10">
+                    <p id="quiz-q-en" class="text-slate-400 text-sm font-mono mb-2" dir="ltr"></p>
+                    <h3 id="quiz-q-ar" class="text-xl md:text-2xl font-black text-slate-800 leading-tight"></h3>
+                </div>
+                <div id="quiz-options" class="grid gap-4">
+                    <!-- Options injected by JS -->
+                </div>
+                <div id="quiz-feedback" class="mt-10 hidden">
+                    <div id="feedback-box" class="p-6 rounded-3xl mb-6 flex flex-col items-center justify-center gap-2 text-white shadow-lg">
+                        <p id="feedback-text" class="font-black text-xl"></p>
+                    </div>
+                    <button onclick="nextQuestion()" class="w-full bg-slate-900 text-white py-6 rounded-3xl font-black text-lg flex items-center justify-center gap-3 hover:bg-black shadow-xl">
+                        Next Question (السؤال التالي) <i data-lucide="arrow-right" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="quiz-result" class="hidden text-center py-10">
+                <div class="w-24 h-24 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-8">
+                    <i data-lucide="check-circle" class="w-14 h-14"></i>
+                </div>
+                <h2 class="text-4xl font-black mb-4 text-slate-800 italic">Quiz Complete! (اكتمل الاختبار)</h2>
+                <p id="final-score-text" class="text-slate-500 text-xl mb-10 font-medium"></p>
+                <button onclick="restartQuiz()" class="bg-indigo-600 text-white px-12 py-5 rounded-3xl font-black text-xl hover:bg-indigo-700 shadow-2xl transition-all">Try Again (إعادة)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Data ---
+        const sections = [
+            {
+                title: "1.1 The Hardware of MRI (1.1 عتاد الرنين المغناطيسي)",
+                content: [
+                    { en: "Scanners of magnetic resonance imaging (MRI) come in many varieties.", ar: "تأتي أجهزة التصوير بالرنين المغناطيسي (MRI) في أنواع عديدة." },
+                    { en: "There is a permanent magnet type, resistive, superconducting, and opening or bore, with or without helium, high field strength or low.", ar: "هناك نوع المغناطيس الدائم، المقاوم، فائق التوصيل، والتصميم المفتوح أو النفق (bore)، بوجود الهيليوم أو بدونه، وقوة مجال عالية أو منخفضة." },
+                    { en: "The choice of magnet mainly governed by what you intend to do, and the cost.", ar: "اختيار المغناطيس يحكمه بشكل أساسي ما تنوي القيام به، والتكلفة." },
+                    { en: "Field magnets offer high quality image better, faster scanning and a wider range of applications, but they are more cost than their counterpart's field is low.", ar: "توفر مغناطيسات المجال العالي جودة صورة أفضل، مسحاً أسرع، ونطاقاً أوسع من التطبيقات، لكنها أكثر تكلفة من نظيراتها ذات المجال المنخفض." }
+                ]
+            },
+            {
+                title: "1.2 Magnet Types (1.2 أنواع المغناطيسات)",
+                content: [
+                    { en: "The static magnetic field (Bo) in MRI systems can be created by: Permanent magnets and Electromagnets.", ar: "المجال المغناطيسي الساكن (Bo) في أنظمة الرنين المغناطيسي يمكن إنشاؤه بواسطة: المغناطيسات الدائمة والمغناطيسات الكهربائية." }
+                ]
+            },
+            {
+                title: "1.2.1 Permanent Magnets (1.2.1 المغناطيسات الدائمة)",
+                details: {
+                    en: "A permanent magnet that originates from permanently ferromagnetic materials, which does not lose the magnet field, that remains over time without weakening. Due to weight considerations, these types of magnets are usually limited to maximum field strengths of 0.4 T (1 Tesla = 10000 Gauss).",
+                    ar: "المغناطيس الدائم ينشأ من مواد مغناطيسية حديدية دائمة، والتي لا تفقد المجال المغناطيسي، بل يظل بمرور الوقت دون إضعاف. نظراً لاعتبارات الوزن، تقتصر هذه الأنواع عادةً على قوة مجال قصوى تبلغ 0.4 تسلا (1 تسلا = 10000 غاوس)."
+                },
+                additional: {
+                    en: "Permanent magnets have usually an open design system which has ample open space which is more comfortable for the patient. It accommodates extremely large patients and dramatically reduces anxiety for all patients especially those who have claustrophobic tendencies or have larger body structures.",
+                    ar: "عادة ما تحتوي المغناطيسات الدائمة على نظام تصميم مفتوح يوفر مساحة مفتوحة واسعة أكثر راحة للمريض. وهي تستوعب المرضى ذوي الأوزان الكبيرة جداً وتقلل بشكل كبير من القلق لجميع المرضى، خاصة أولئك الذين لديهم ميول لرهاب الأماكن المغلقة أو لديهم هياكل جسم كبيرة."
+                },
+                limit: "0.4 T",
+                advantages: [
+                    { en: "Low power consumption", ar: "استهلاك منخفض للطاقة" },
+                    { en: "Low operating cost", ar: "تكلفة تشغيل منخفضة" },
+                    { en: "Small fringe field", ar: "مجال هامشي صغير" },
+                    { en: "No cryogen", ar: "لا توجد سوائل تبريد (Cryogen)" }
+                ],
+                disadvantages: [
+                    { en: "Limited field strength (<0.3T)", ar: "قوة مجال محدودة (أقل من 0.3 تسلا)" },
+                    { en: "Very heavy", ar: "ثقيل جداً" },
+                    { en: "No quench possibility", ar: "لا توجد إمكانية للإخماد الفجائي (Quench)" }
+                ]
+            },
+            {
+                title: "1.2.2.1 Resistive Magnets (1.2.2.1 المغناطيسات المقاومة)",
+                details: {
+                    en: "Resistive magnets are made from loops of wire wrapped around a cylinder through which a large electric current is passed. These magnets utilize the principles of electromagnetism to generate the magnetic field, like the ones used in scrap yards to pick up cars.",
+                    ar: "المغناطيسات المقاومة مصنوعة من حلقات من الأسلاك الملفوفة حول أسطوانة يمر من خلالها تيار كهربائي كبير. تستخدم هذه المغناطيسات مبادئ الكهرومغناطيسية لتوليد المجال المغناطيسي، مثل تلك المستخدمة في ساحات الخردة لرفع السيارات."
+                },
+                additional: {
+                    en: "Lower in cost, but need a lot of power due to natural resistance, producing heat which requires significant cooling of the coils. Limited up to 0.6 Tesla. Types: iron-core and air-core. Hitachi's Airis 0.3 Tesla is an air-core system.",
+                    ar: "أقل تكلفة، لكنها تحتاج الكثير من الطاقة بسبب المقاومة الطبيعية، وتنتج حرارة تتطلب تبريداً كبيراً للملفات. تقتصر على 0.6 تسلا. الفئات: قلب حديدي وقلب هوائي. نظام Hitachi Airis بقوة 0.3 تسلا هو نظام ذو قلب هوائي."
+                },
+                limit: "0.6 T",
+                advantages: [
+                    { en: "Low capital cost", ar: "تكلفة رأسمالية منخفضة" },
+                    { en: "Light weight", ar: "خفيف الوزن" },
+                    { en: "Can be shut off", ar: "يمكن إطفاؤه" },
+                    { en: "Large fringe field", ar: "مجال هامشي كبير" }
+                ],
+                disadvantages: [
+                    { en: "High power consumption", ar: "استهلاك عالٍ للطاقة" },
+                    { en: "Limited field strength (<0.2T)", ar: "قوة مجال محدودة (أقل من 0.2 تسلا)" },
+                    { en: "Water cooling required", ar: "يتطلب تبريداً مائياً" }
+                ]
+            },
+            {
+                title: "1.2.2.2 Superconducting Magnets (1.2.2.2 المغناطيسات فائقة التوصيل)",
+                details: {
+                    en: "Today's most commonly used. Materials: niobium-tin and niobium-titanium. Wire is surrounded with a coolant, such as liquid helium, to reduce resistance. At 4 Kelvin (-269 C°) electric wire loses its resistance. Once energized, it won't lose its magnetic field.",
+                    ar: "الأكثر استخداماً اليوم. المواد: نيوبيوم-قصدير ونيوبيوم-تيتانيوم. السلك محاط بمبرد، مثل الهيليوم السائل، لتقليل المقاومة. عند 4 كلفن (-269 درجة مئوية) يفقد السلك الكهربائي مقاومته. بمجرد شحنه، لن يفقد مجاله المغناطيسي."
+                },
+                additional: {
+                    en: "Allows field strengths up to 12 Tesla (Clinical 1.5 T). Most are bore type. Vacuum vessels (temperature shields) surround the core to prevent helium boil-off. Toshiba (1997) introduced the world's first open superconducting magnet (OPART 0.35 T) using special alloy requiring no refills.",
+                    ar: "تسمح بقوة مجال تصل إلى 12 تسلا (السريري 1.5 تسلا). معظمها من نوع النفق (bore). أوعية التفريغ (الدروع الحرارية) تحيط بالقلب لمنع تبخر الهيليوم. قدمت توشيبا (1997) أول مغناطيس مفتوح فائق التوصيل في العالم (OPART 0.35 T) باستخدام سبيكة خاصة لا تتطلب إعادة تعبئة."
+                },
+                limit: "12 T / 1.5 T",
+                advantages: [
+                    { en: "High field strength", ar: "قوة مجال عالية" },
+                    { en: "High field homogeneity", ar: "تجانس عالٍ للمجال" },
+                    { en: "Low power consumption", ar: "استهلاك منخفض للطاقة" },
+                    { en: "High SNR and Fast scanning", ar: "نسبة إشارة لضجيج عالية ومسح سريع" }
+                ],
+                disadvantages: [
+                    { en: "High capital/cryogen costs", ar: "تكاليف رأسمالية وتكاليف تبريد عالية" },
+                    { en: "Acoustic noise", ar: "ضجيج صوتي" },
+                    { en: "Motion artifacts", ar: "تشوهات حركية" },
+                    { en: "Technical complexity", ar: "تعقيد تقني" }
+                ]
+            },
+            {
+                title: "Current Trend (التوجهات الحالية)",
+                content: [
+                    { en: "The current trend in magnet design is low field open design versus high field bore design.", ar: "التوجه الحالي في تصميم المغناطيس هو التصميم المفتوح ذو المجال المنخفض مقابل تصميم النفق ذو المجال العالي." },
+                    { en: "Obviously, it would be desirable to combine the two, depending on manufacturing costs and technical/structural limitations.", ar: "من الواضح أنه سيكون من المرغوب فيه الجمع بين الاثنين، اعتماداً على تكاليف التصنيع والقيود التقنية/الهيكلية." }
+                ]
+            }
+        ];
+
+        const flashcards = [
+            { q_en: "1 Tesla = ? Gauss", q_ar: "1 تسلا = كم غاوس؟", a_en: "10,000 Gauss", a_ar: "10,000 غاوس" },
+            { q_en: "What materials make superconducting coils?", q_ar: "ما المواد التي تصنع منها ملفات فائقة التوصيل؟", a_en: "Niobium-tin and Niobium-titanium", a_ar: "نيوبيوم-قصدير ونيوبيوم-تيتانيوم" },
+            { q_en: "At what temperature does wire lose resistance?", q_ar: "في أي درجة حرارة يفقد السلك مقاومته؟", a_en: "4 Kelvin (-269 C°)", a_ar: "4 كلفن (-269 درجة مئوية)" },
+            { q_en: "Which magnet type is limited to 0.4 T?", q_ar: "أي نوع مغناطيس محدود بـ 0.4 تسلا؟", a_en: "Permanent Magnets", a_ar: "المغناطيسات الدائمة" },
+            { q_en: "Which magnet is similar to those in scrap yards?", q_ar: "أي مغناطيس يشبه مغناطيسات ساحات الخردة؟", a_en: "Resistive Magnets", a_ar: "المغناطيسات المقاومة" },
+            { q_en: "What prevents Helium boil-off in superconductors?", q_ar: "ما الذي يمنع تبخر الهيليوم في فائقة التوصيل؟", a_en: "Vacuum vessels (temperature shields)", a_ar: "أوعية التفريغ (الدروع الحرارية)" },
+            { q_en: "When did Toshiba introduce the first open superconducting magnet?", q_ar: "متى قدمت توشيبا أول مغناطيس مفتوح فائق التوصيل؟", a_en: "1997", a_ar: "عام 1997" },
+            { q_en: "Name the clinical field strength for Superconducting magnets.", q_ar: "اذكر قوة المجال السريري للمغناطيسات فائقة التوصيل.", a_en: "1.5 Tesla", a_ar: "1.5 تسلا" }
+        ];
+
+        const quizQuestions = [
+            { q_en: "What is the max strength of Permanent magnets? (أقصى قوة للدائم؟)", q_ar: "ما هي أقصى قوة للمغناطيسات الدائمة؟", options: ["0.4 T", "1.5 T", "12 T", "0.6 T"], correct: 0 },
+            { q_en: "Which magnet can be shut off? (أي نوع يمكن إطفاؤه؟)", q_ar: "أي نوع من المغناطيسات يمكن إطفاؤه؟", options: ["Permanent", "Resistive", "Superconducting", "None"], correct: 1 },
+            { q_en: "Temperature for superconductivity? (حرارة الموصلية الفائقة؟)", q_ar: "ما هي درجة الحرارة المطلوبة للموصلية الفائقة؟", options: ["0 K", "4 K", "273 K", "310 K"], correct: 1 },
+            { q_en: "What did Toshiba introduce in 1997? (ماذا قدمت توشيبا 1997؟)", q_ar: "ماذا قدمت شركة توشيبا في عام 1997؟", options: ["Resistive System", "Permanent System", "Open Superconducting", "Bore System"], correct: 2 },
+            { q_en: "Material for superconducting wire? (مادة أسلاك التوصيل الفائق؟)", q_ar: "ما هي المادة المستخدمة في أسلاك التوصيل الفائق؟", options: ["Copper", "Iron", "Niobium-titanium", "Aluminum"], correct: 2 },
+            { q_en: "Which magnet is 'Very Heavy'? (أي مغناطيس ثقيل جداً؟)", q_ar: "أي نوع من المغناطيسات يوصف بأنه ثقيل جداً؟", options: ["Resistive", "Permanent", "Superconducting", "Air-core"], correct: 1 },
+            { q_en: "Standard Clinical field strength? (قوة المجال السريري القياسية؟)", q_ar: "ما هي قوة المجال السريري القياسية؟", options: ["0.3 T", "0.6 T", "1.5 T", "3.0 T"], correct: 2 },
+            { q_en: "1 Tesla equals how many Gauss? (1 تسلا يساوي؟)", q_ar: "1 تسلا يعادل كم غاوس؟", options: ["1,000", "5,000", "10,000", "100,000"], correct: 2 }
+        ];
+
+        // --- State Management ---
+        let currentCardIndex = 0;
+        let quizIndex = 0;
+        let quizScore = 0;
+        let selectedOption = null;
+
+        // --- Tab Switching ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId + '-content').classList.remove('hidden');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('text-slate-500');
+            });
+            document.getElementById('tab-' + tabId).classList.add('bg-indigo-600', 'text-white');
+            document.getElementById('tab-' + tabId).classList.remove('text-slate-500');
+        }
+
+        // --- Summary Injection ---
+        function renderSummary() {
+            const container = document.getElementById('summary-content');
+            container.innerHTML = sections.map(sec => `
+                <div class="bg-white rounded-3xl shadow-sm border-2 border-slate-200 overflow-hidden">
+                    <div class="bg-indigo-50 border-b p-4 md:p-6 text-left" dir="ltr">
+                        <h2 class="text-lg md:text-xl font-black text-indigo-900">${sec.title}</h2>
+                    </div>
+                    <div class="p-6 md:p-8">
+                        ${sec.content ? sec.content.map(item => `
+                            <div class="mb-6 border-r-4 border-indigo-100 pr-4">
+                                <p class="text-slate-500 font-mono text-sm mb-1 text-left leading-relaxed" dir="ltr">${item.en}</p>
+                                <p class="text-slate-800 font-bold leading-relaxed">${item.ar}</p>
+                            </div>
+                        `).join('') : ''}
+
+                        ${sec.details ? `
+                            <div class="mt-8 space-y-6">
+                                <div class="bg-slate-50 p-6 rounded-2xl border-l-4 border-slate-300">
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 text-left" dir="ltr">Core Details (التفاصيل الجوهرية)</h4>
+                                    <p class="text-slate-500 text-sm mb-2 text-left italic leading-relaxed" dir="ltr">${sec.details.en}</p>
+                                    <p class="text-slate-800 font-medium leading-relaxed">${sec.details.ar}</p>
+                                </div>
+                                
+                                ${sec.additional ? `
+                                    <div class="bg-indigo-50 p-6 rounded-2xl">
+                                        <h4 class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-3 text-left" dir="ltr">Context & Examples (السياق والأمثلة)</h4>
+                                        <p class="text-indigo-600 text-sm mb-2 text-left italic leading-relaxed" dir="ltr">${sec.additional.en}</p>
+                                        <p class="text-indigo-900 font-medium leading-relaxed">${sec.additional.ar}</p>
+                                    </div>
+                                ` : ''}
+
+                                <div class="grid md:grid-cols-2 gap-6 pt-4">
+                                    <div class="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
+                                        <h5 class="font-bold text-emerald-800 mb-4 flex items-center gap-2">
+                                            <i data-lucide="check-circle" class="w-5 h-5"></i> Advantages (المميزات)
+                                        </h5>
+                                        <div class="space-y-4">
+                                            ${sec.advantages.map(adv => `
+                                                <div class="border-b border-emerald-200 pb-2 last:border-0">
+                                                    <p class="text-emerald-600 text-[10px] font-black text-left uppercase" dir="ltr">${adv.en}</p>
+                                                    <p class="text-emerald-900 font-bold text-sm">${adv.ar}</p>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                    <div class="bg-rose-50 p-6 rounded-3xl border border-rose-100">
+                                        <h5 class="font-bold text-rose-800 mb-4 flex items-center gap-2">
+                                            <i data-lucide="alert-triangle" class="w-5 h-5"></i> Disadvantages (العيوب)
+                                        </h5>
+                                        <div class="space-y-4">
+                                            ${sec.disadvantages.map(dis => `
+                                                <div class="border-b border-rose-200 pb-2 last:border-0">
+                                                    <p class="text-rose-500 text-[10px] font-black text-left uppercase" dir="ltr">${dis.en}</p>
+                                                    <p class="text-rose-900 font-bold text-sm">${dis.ar}</p>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- Flashcard Logic ---
+        function updateCard() {
+            const card = flashcards[currentCardIndex];
+            document.getElementById('card-q-en').innerText = card.q_en;
+            document.getElementById('card-q-ar').innerText = card.q_ar;
+            document.getElementById('card-a-en').innerText = card.a_en;
+            document.getElementById('card-a-ar').innerText = card.a_ar;
+            document.getElementById('card-inner').classList.remove('flipped');
+        }
+
+        function flipCard() {
+            document.getElementById('card-inner').classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            if (currentCardIndex < flashcards.length - 1) {
+                currentCardIndex++;
+                updateCard();
+            }
+        }
+
+        function prevCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                updateCard();
+            }
+        }
+
+        // --- Quiz Logic ---
+        function restartQuiz() {
+            quizIndex = 0;
+            quizScore = 0;
+            selectedOption = null;
+            document.getElementById('quiz-result').classList.add('hidden');
+            document.getElementById('quiz-active').classList.remove('hidden');
+            document.getElementById('quiz-score').innerText = '0';
+            updateQuiz();
+        }
+
+        function updateQuiz() {
+            const q = quizQuestions[quizIndex];
+            document.getElementById('quiz-progress').innerText = `Question ${quizIndex + 1} / ${quizQuestions.length}`;
+            document.getElementById('quiz-q-en').innerText = q.q_en;
+            document.getElementById('quiz-q-ar').innerText = q.q_ar;
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = q.options.map((opt, i) => `
+                <button onclick="selectOption(${i})" class="quiz-opt-btn w-full p-6 text-right border-4 border-slate-100 rounded-3xl transition-all flex justify-between items-center group bg-white hover:border-indigo-200 hover:bg-indigo-50 shadow-sm">
+                    <span class="font-bold text-lg">${opt}</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5 text-indigo-200 opacity-0 group-hover:opacity-100 transition-all"></i>
+                </button>
+            `).join('');
+            lucide.createIcons();
+            selectedOption = null;
+        }
+
+        function selectOption(idx) {
+            if (selectedOption !== null) return;
+            selectedOption = idx;
+            const q = quizQuestions[quizIndex];
+            const isCorrect = idx === q.correct;
+            
+            if (isCorrect) quizScore++;
+            document.getElementById('quiz-score').innerText = quizScore;
+
+            const btns = document.querySelectorAll('.quiz-opt-btn');
+            btns.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i === q.correct) {
+                    btn.className = "quiz-opt-btn w-full p-6 text-right border-4 rounded-3xl transition-all flex justify-between items-center bg-emerald-50 border-emerald-500 text-emerald-800 shadow-md scale-[1.02]";
+                    btn.innerHTML += '<i data-lucide="check-circle" class="w-6 h-6 text-emerald-600"></i>';
+                } else if (i === idx) {
+                    btn.className = "quiz-opt-btn w-full p-6 text-right border-4 rounded-3xl transition-all flex justify-between items-center bg-rose-50 border-rose-500 text-rose-800 shadow-md";
+                    btn.innerHTML += '<i data-lucide="x-circle" class="w-6 h-6 text-rose-600"></i>';
+                } else {
+                    btn.className = "quiz-opt-btn w-full p-6 text-right border-4 rounded-3xl transition-all flex justify-between items-center bg-slate-50 border-slate-50 opacity-40";
+                }
+            });
+
+            // Feedback
+            const feedbackBox = document.getElementById('feedback-box');
+            const feedbackText = document.getElementById('feedback-text');
+            if (isCorrect) {
+                feedbackBox.className = "p-6 rounded-3xl mb-6 flex flex-col items-center justify-center gap-2 text-white shadow-lg bg-emerald-500 shadow-emerald-200";
+                feedbackText.innerText = "Correct Answer! (إجابة صحيحة)";
+            } else {
+                feedbackBox.className = "p-6 rounded-3xl mb-6 flex flex-col items-center justify-center gap-2 text-white shadow-lg bg-rose-500 shadow-rose-200";
+                feedbackText.innerText = "Wrong Answer! (إجابة خاطئة)";
+            }
+            document.getElementById('quiz-feedback').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function nextQuestion() {
+            if (quizIndex < quizQuestions.length - 1) {
+                quizIndex++;
+                updateQuiz();
+            } else {
+                document.getElementById('quiz-active').classList.add('hidden');
+                document.getElementById('quiz-result').classList.remove('hidden');
+                document.getElementById('final-score-text').innerText = `Final Score: ${quizScore} / ${quizQuestions.length}`;
+                lucide.createIcons();
+            }
+        }
+
+        // --- Initialize ---
+        window.onload = () => {
+            renderSummary();
+            updateCard();
+            updateQuiz();
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
