@@ -15,10 +15,7 @@
         
         .setup-controls { z-index: 10; display: flex; flex-direction: column; gap: 15px; align-items: center; }
         .action-btn { padding: 15px 30px; font-size: 18px; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        /* التعديل 1: زر التشغيل يظهر فوراً بدون انتظار */
         #start-btn { background-color: #28a745; display: block; }
-        
         #flip-btn { background-color: #17a2b8; display: none; position: absolute; bottom: 10px; right: 10px; z-index: 20; padding: 10px 15px; font-size: 14px;}
         
         video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none; z-index: 1; transition: transform 0.3s;}
@@ -41,7 +38,7 @@
 <body>
 
     <div id="camera-container">
-        <div id="ai-guidance">⏳ جاري تحميل ذكاء اليد (سريع جداً)...</div>
+        <div id="ai-guidance">⏳ جاري إعداد ذكاء اليد (سريع)...</div>
         
         <div class="setup-controls" id="setup-controls">
             <button id="start-btn" class="action-btn" onclick="startCamera()">تشغيل المحاكي</button>
@@ -79,12 +76,12 @@
         let currentStream = null;
         let currentMode = 'hand'; 
         
-        // متغيرات تتبع التحميل الذكي
         let handsReady = false;
         let poseReady = false;
         let poseInitialized = false;
+        let pose = null; // سيتم تعريفه فقط عند اختيار الصدر
 
-        // --- إعداد موديل اليد (يتحمل فوراً لأنه خفيف) ---
+        // --- إعداد موديل اليد (يتحمل فوراً) ---
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
         hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
         hands.initialize().then(() => { 
@@ -98,12 +95,7 @@
             }
         });
 
-        // --- إعداد موديل الجسم (لا يتحمل إلا عند الضغط على زر Chest PA) ---
-        const pose = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`}); // Placeholder to prevent errors, actual pose loaded on demand
-        const realPose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
-        realPose.setOptions({ modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
-
-        // --- دالة التوجيه ---
+        // --- دالة التوجيه العامة ---
         function updateGuidance(dx, dy, targetName) {
             let tolerance = 0.08;
             if (Math.abs(dx) < tolerance && Math.abs(dy) < tolerance) {
@@ -128,7 +120,7 @@
             }
         }
 
-        // --- تحليل النتائج (اليد) ---
+        // --- تحليل اليد ---
         hands.onResults((results) => {
             if (!aiEnabled || currentMode !== 'hand') return;
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
@@ -140,33 +132,56 @@
             }
         });
 
-        // --- تحليل النتائج (الصدر) ---
-        realPose.onResults((results) => {
-            if (!aiEnabled || currentMode !== 'chest') return;
-            if (results.poseLandmarks) {
-                const leftShoulder = results.poseLandmarks[11];
-                const rightShoulder = results.poseLandmarks[12];
-                let midX = (leftShoulder.x + rightShoulder.x) / 2;
-                let midY = ((leftShoulder.y + rightShoulder.y) / 2) + 0.18; 
-                updateGuidance(midX - 0.5, midY - 0.5, "T7 Level");
-            } else {
-                aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض (الأكتاف)...";
-                aiGuidance.style.color = "yellow";
-            }
-        });
+        // --- دالة التحميل الذكي للصدر (T7) ---
+        function loadPoseModel() {
+            aiGuidance.innerText = "⏳ جاري تحميل ذكاء الصدر (لمرة واحدة فقط)...";
+            aiGuidance.style.color = "orange";
+            
+            pose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
+            pose.setOptions({ modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+            
+            pose.onResults((results) => {
+                if (!aiEnabled || currentMode !== 'chest') return;
+                if (results.poseLandmarks) {
+                    const leftShoulder = results.poseLandmarks[11];
+                    const rightShoulder = results.poseLandmarks[12];
+                    
+                    let midX = (leftShoulder.x + rightShoulder.x) / 2;
+                    let midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+                    
+                    // حساب المسافة بين الكتفين كمقياس ديناميكي
+                    let shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+                    
+                    // النزول بنسبة 55% من عرض الأكتاف للوصول للزاوية السفلية للوح الكتف (T7)
+                    let t7_Y = midShoulderY + (shoulderWidth * 0.55); 
+                    
+                    updateGuidance(midX - 0.5, t7_Y - 0.5, "T7 Level");
+                } else {
+                    aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض (الأكتاف)...";
+                    aiGuidance.style.color = "yellow";
+                }
+            });
+
+            pose.initialize().then(() => {
+                poseReady = true;
+                if(aiEnabled && currentMode === 'chest') {
+                    aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض...";
+                    aiGuidance.style.color = "yellow";
+                }
+            });
+        }
 
         async function processAIFrames() {
             if (aiEnabled && video.readyState >= 2) {
                 if (currentMode === 'hand' && handsReady) {
                     await hands.send({image: video});
-                } else if (currentMode === 'chest' && poseReady) {
-                    await realPose.send({image: video});
+                } else if (currentMode === 'chest' && poseReady && pose) {
+                    await pose.send({image: video});
                 }
             }
             requestAnimationFrame(processAIFrames);
         }
 
-        // --- دالة تبديل الوضعيات (التحميل الذكي) ---
         function setMode(mode) {
             currentMode = mode;
             document.getElementById('btn-hand').classList.remove('active');
@@ -174,19 +189,10 @@
             document.getElementById('btn-' + mode).classList.add('active');
             
             if (mode === 'chest') {
-                infoText.innerText = "السنتر: الفقرة الصدرية السابعة (T7 Level)";
-                // تحميل نموذج الصدر لأول مرة فقط عند الحاجة
+                infoText.innerText = "السنتر: مستوى الزاوية السفلية للوح الكتف (T7)";
                 if (!poseInitialized) {
                     poseInitialized = true;
-                    aiGuidance.innerText = "⏳ جاري تحميل ذكاء الصدر (لمرة واحدة)...";
-                    aiGuidance.style.color = "orange";
-                    realPose.initialize().then(() => {
-                        poseReady = true;
-                        if(aiEnabled) {
-                            aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض...";
-                            aiGuidance.style.color = "yellow";
-                        }
-                    });
+                    loadPoseModel(); // التحميل يبدأ هنا فقط!
                 } else if (!poseReady) {
                     aiGuidance.innerText = "⏳ جاري إكمال تحميل ذكاء الصدر...";
                 } else {
