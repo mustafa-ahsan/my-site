@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI X-Ray Simulator</title>
+    <title>AI X-Ray Simulator Pro</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
     
     <style>
         body { margin: 0; background-color: #111; color: white; font-family: Arial, sans-serif; text-align: center; overflow: hidden; }
@@ -18,26 +20,32 @@
         
         video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none; z-index: 1; transition: transform 0.3s;}
         
-        /* تصميم الزائد (السنتر) */
+        /* تصميم الزائد */
         .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; z-index: 5; }
         .line-h { position: absolute; width: 120px; height: 3px; background-color: rgba(255, 0, 0, 0.7); top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .line-v { position: absolute; width: 3px; height: 120px; background-color: rgba(255, 0, 0, 0.7); top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .center-dot { position: absolute; width: 10px; height: 10px; background-color: yellow; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         
-        /* شريط التوجيه الذكي */
         #ai-guidance { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.8); padding: 10px 20px; border-radius: 10px; font-size: 18px; font-weight: bold; color: yellow; z-index: 10; display: block; border: 2px solid white; white-space: nowrap;}
         
-        .controls { padding: 10px; height: 35vh; display: flex; flex-direction: column; justify-content: flex-start; z-index: 10; position: relative; background: #111;}
-        #info { font-size: 16px; color: #00ff00; margin-bottom: 10px; padding: 5px; }
+        /* قسم التحكم بالوضعيات */
+        .controls { padding: 10px; height: 35vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 10; position: relative; background: #111;}
+        .mode-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
+        .mode-btn { padding: 12px 20px; font-size: 16px; background-color: #444; color: white; border: 2px solid #007bff; border-radius: 8px; cursor: pointer; transition: 0.3s;}
+        .mode-btn.active { background-color: #007bff; font-weight: bold; border-color: white;}
+        #info-text { margin-top: 10px; color: #00ff00; font-size: 14px; font-weight: bold; }
+        
+        /* تصميم التنبيه الجديد */
+        #dev-warning { margin-top: 15px; color: #ff9800; font-size: 13px; font-weight: bold; background-color: rgba(255, 152, 0, 0.1); padding: 5px 10px; border-radius: 5px; border: 1px dashed #ff9800; }
     </style>
 </head>
 <body>
 
     <div id="camera-container">
-        <div id="ai-guidance">⏳ جاري تحميل الذكاء الاصطناعي بالخلفية...</div>
+        <div id="ai-guidance">⏳ جاري تحميل نماذج الذكاء الاصطناعي...</div>
         
         <div class="setup-controls" id="setup-controls">
-            <button id="start-btn" class="action-btn" onclick="startCamera()">تشغيل الكاميرا</button>
+            <button id="start-btn" class="action-btn" onclick="startCamera()">تشغيل المحاكي</button>
         </div>
 
         <video id="camera" autoplay playsinline muted></video>
@@ -49,7 +57,14 @@
     </div>
 
     <div class="controls">
-        <div id="info">انتظر رسالة "الذكاء جاهز" ثم اضغط تشغيل</div>
+        <div id="info">اختر وضعية التصوير:</div>
+        <div class="mode-buttons" id="mode-buttons">
+            <button class="mode-btn active" id="btn-hand" onclick="setMode('hand')">🖐️ Hand AP</button>
+            <button class="mode-btn" id="btn-chest" onclick="setMode('chest')">🫁 Chest PA</button>
+        </div>
+        <div id="info-text">السنتر: مفصل (3rd MCP)</div>
+        
+        <div id="dev-warning">⚠️ الأداة حالياً تحت التطوير التجريبي - قد تواجه بعض الأخطاء ⚠️</div>
     </div>
 
     <script>
@@ -59,87 +74,117 @@
         const flipBtn = document.getElementById('flip-btn');
         const crosshair = document.getElementById('crosshair');
         const startBtn = document.getElementById('start-btn');
+        const modeButtons = document.getElementById('mode-buttons');
+        const infoText = document.getElementById('info-text');
         
         let aiEnabled = false;
-        let aiReady = false;
-        let currentFacingMode = "environment"; // الكاميرا الخلفية هي الافتراضية
+        let modelsReady = 0; // ننتظر تحميل الموديلين
+        let currentFacingMode = "environment";
         let currentStream = null;
+        let currentMode = 'hand'; // الوضع الافتراضي
 
-        // 1. إعداد نموذج الذكاء الاصطناعي (MediaPipe Hands)
-        const hands = new Hands({locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-        }});
-        
-        hands.setOptions({
-            maxNumHands: 1,
-            modelComplexity: 0,
-            minDetectionConfidence: 0.6,
-            minTrackingConfidence: 0.5
-        });
+        // --- إعداد موديل اليد (Hand) ---
+        const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+        hands.initialize().then(() => { checkModelsLoaded(); });
 
-        // الخدعة: إجبار المتصفح على تحميل الذكاء الاصطناعي فور فتح الصفحة
-        hands.initialize().then(() => {
-            aiReady = true;
-            aiGuidance.innerText = "✨ الذكاء الاصطناعي جاهز! اضغط تشغيل";
-            aiGuidance.style.color = "#00ff00";
-            aiGuidance.style.borderColor = "#00ff00";
-            startBtn.style.display = 'block'; // إظهار زر التشغيل بعد التحميل
-        });
+        // --- إعداد موديل الجسم (Pose) للصدر ---
+        const pose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
+        pose.setOptions({ modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+        pose.initialize().then(() => { checkModelsLoaded(); });
 
-        // 2. تحليل النتائج وتوجيه المستخدم لتعديل مكان الكاميرا
-        hands.onResults((results) => {
-            if (!aiEnabled) return;
+        function checkModelsLoaded() {
+            modelsReady++;
+            if (modelsReady === 2) {
+                aiGuidance.innerText = "✨ الذكاء الاصطناعي جاهز! اضغط تشغيل";
+                aiGuidance.style.color = "#00ff00";
+                startBtn.style.display = 'block';
+            }
+        }
 
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const lm = results.multiHandLandmarks[0][9]; // النقطة 9: قاعدة الإصبع الأوسط (3rd MCP)
-                
-                let dx = lm.x - 0.5;
-                let dy = lm.y - 0.5;
-                let tolerance = 0.08;
-
-                if (Math.abs(dx) < tolerance && Math.abs(dy) < tolerance) {
-                    aiGuidance.innerText = "✅ سنتر ممتاز!";
-                    aiGuidance.style.color = "#00ff00";
-                    aiGuidance.style.borderColor = "#00ff00";
+        // --- دالة التوجيه (الأسهم) بناءً على الهدف ---
+        function updateGuidance(dx, dy, targetName) {
+            let tolerance = 0.08;
+            if (Math.abs(dx) < tolerance && Math.abs(dy) < tolerance) {
+                aiGuidance.innerText = "✅ سنتر ممتاز على " + targetName + "!";
+                aiGuidance.style.color = "#00ff00";
+                aiGuidance.style.borderColor = "#00ff00";
+            } else {
+                let instructions = "";
+                if (currentFacingMode === "user") {
+                    if (dx < -tolerance) instructions += "➡️ لليمين ";
+                    if (dx > tolerance) instructions += "⬅️ لليسار ";
                 } else {
-                    let instructions = "";
-                    
-                    // الاتجاهات المصححة لتوجيه الموبايل (الكاميرا) بدلاً من المريض
-                    if (currentFacingMode === "user") {
-                        if (dx < -tolerance) instructions += "➡️ لليمين ";
-                        if (dx > tolerance) instructions += "⬅️ لليسار ";
-                    } else {
-                        if (dx < -tolerance) instructions += "⬅️ لليسار "; 
-                        if (dx > tolerance) instructions += "➡️ لليمين "; 
-                    }
-                    
-                    if (dy < -tolerance) instructions += "⬆️ للأعلى ";   
-                    if (dy > tolerance) instructions += "⬇️ للأسفل ";   
-                    
-                    aiGuidance.innerText = instructions;
-                    aiGuidance.style.color = "#ff3333";
-                    aiGuidance.style.borderColor = "#ff3333";
+                    if (dx < -tolerance) instructions += "⬅️ لليسار "; 
+                    if (dx > tolerance) instructions += "➡️ لليمين "; 
                 }
+                if (dy < -tolerance) instructions += "⬆️ للأعلى ";   
+                if (dy > tolerance) instructions += "⬇️ للأسفل ";   
+                
+                aiGuidance.innerText = instructions;
+                aiGuidance.style.color = "#ff3333";
+                aiGuidance.style.borderColor = "#ff3333";
+            }
+        }
+
+        // --- تحليل النتائج (لليد) ---
+        hands.onResults((results) => {
+            if (!aiEnabled || currentMode !== 'hand') return;
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const lm = results.multiHandLandmarks[0][9]; // 3rd MCP
+                updateGuidance(lm.x - 0.5, lm.y - 0.5, "3rd MCP");
             } else {
                 aiGuidance.innerText = "🔍 وجه الكاميرا ليد المريض...";
                 aiGuidance.style.color = "yellow";
-                aiGuidance.style.borderColor = "yellow";
+            }
+        });
+
+        // --- تحليل النتائج (للصدر) ---
+        pose.onResults((results) => {
+            if (!aiEnabled || currentMode !== 'chest') return;
+            if (results.poseLandmarks) {
+                const leftShoulder = results.poseLandmarks[11];
+                const rightShoulder = results.poseLandmarks[12];
+                
+                // حساب منتصف المسافة بين الكتفين (أفقياً)
+                let midX = (leftShoulder.x + rightShoulder.x) / 2;
+                // النزول للأسفل للوصول للفقرة T7
+                let midY = ((leftShoulder.y + rightShoulder.y) / 2) + 0.18; 
+                
+                updateGuidance(midX - 0.5, midY - 0.5, "T7 Level");
+            } else {
+                aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض (الأكتاف)...";
+                aiGuidance.style.color = "yellow";
             }
         });
 
         async function processAIFrames() {
             if (aiEnabled && video.readyState >= 2) {
-                await hands.send({image: video});
+                if (currentMode === 'hand') {
+                    await hands.send({image: video});
+                } else if (currentMode === 'chest') {
+                    await pose.send({image: video});
+                }
             }
             requestAnimationFrame(processAIFrames);
         }
 
-        // 3. تشغيل الكاميرا
-        function startCamera() {
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-hand').classList.remove('active');
+            document.getElementById('btn-chest').classList.remove('active');
+            document.getElementById('btn-' + mode).classList.add('active');
+            
+            if (mode === 'hand') {
+                infoText.innerText = "السنتر: مفصل (3rd MCP Joint)";
+            } else {
+                infoText.innerText = "السنتر: الفقرة الصدرية السابعة (T7 Level)";
             }
+            aiGuidance.innerText = "🔄 جاري التبديل...";
+        }
 
+        function startCamera() {
+            if (currentStream) currentStream.getTracks().forEach(track => track.stop());
             navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } })
                 .then((stream) => {
                     currentStream = stream;
@@ -148,26 +193,18 @@
                     crosshair.style.display = 'block';
                     setupControls.style.display = 'none';
                     flipBtn.style.display = 'block';
+                    modeButtons.style.display = 'flex'; // إظهار أزرار الوضعيات
                     
-                    // قلب الشاشة كمرآة فقط إذا كانت الكاميرا أمامية
                     video.style.transform = currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
 
                     video.addEventListener('loadeddata', () => {
                         aiEnabled = true;
-                        if (!aiReady) {
-                            aiGuidance.innerText = "⏳ جاري إكمال تحميل الذكاء الاصطناعي...";
-                            aiGuidance.style.color = "orange";
-                            aiGuidance.style.borderColor = "orange";
-                        }
                         processAIFrames();
                     });
                 })
-                .catch((err) => {
-                    alert("تعذر فتح الكاميرا، يرجى التأكد من الصلاحيات.");
-                });
+                .catch((err) => { alert("تعذر فتح الكاميرا، يرجى التأكد من الصلاحيات."); });
         }
 
-        // 4. تبديل الكاميرا (أمامية / خلفية)
         function toggleCamera() {
             aiEnabled = false; 
             currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
