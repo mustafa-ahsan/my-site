@@ -18,13 +18,11 @@
         
         video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none; z-index: 1; transition: transform 0.3s;}
         
-        /* تصميم الزائد */
         .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; z-index: 5; }
         .line-h { position: absolute; width: 120px; height: 3px; background-color: rgba(255, 0, 0, 0.7); top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .line-v { position: absolute; width: 3px; height: 120px; background-color: rgba(255, 0, 0, 0.7); top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .center-dot { position: absolute; width: 10px; height: 10px; background-color: yellow; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         
-        /* شريط التوجيه الذكي */
         #ai-guidance { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.8); padding: 10px 20px; border-radius: 10px; font-size: 18px; font-weight: bold; color: yellow; z-index: 10; display: block; border: 2px solid white; white-space: nowrap;}
         
         .controls { padding: 10px; height: 35vh; display: flex; flex-direction: column; justify-content: flex-start; z-index: 10; position: relative; background: #111;}
@@ -34,7 +32,7 @@
 <body>
 
     <div id="camera-container">
-        <div id="ai-guidance">⏳ جاري تحميل ملفات الذكاء الاصطناعي...</div>
+        <div id="ai-guidance">⏳ جاري تحميل الذكاء الاصطناعي بالخلفية...</div>
         
         <div class="setup-controls" id="setup-controls">
             <button id="start-btn" class="action-btn" onclick="startCamera()">تشغيل الكاميرا</button>
@@ -49,7 +47,7 @@
     </div>
 
     <div class="controls">
-        <div id="info">اضغط على تشغيل للبدء</div>
+        <div id="info">انتظر رسالة "الذكاء جاهز" ثم اضغط تشغيل</div>
     </div>
 
     <script>
@@ -60,19 +58,27 @@
         const crosshair = document.getElementById('crosshair');
         
         let aiEnabled = false;
-        let currentFacingMode = "environment"; // نبدأ بالخلفية افتراضياً
+        let aiReady = false;
+        let currentFacingMode = "environment";
         let currentStream = null;
 
-        // 1. إعداد الذكاء الاصطناعي (يبدأ التحميل فور فتح الصفحة)
         const hands = new Hands({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         }});
         
         hands.setOptions({
             maxNumHands: 1,
-            modelComplexity: 0, // 0 = وضع الـ Lite (سريع جداً على الموبايل)
+            modelComplexity: 0,
             minDetectionConfidence: 0.6,
             minTrackingConfidence: 0.5
+        });
+
+        // الخدعة: إجبار المتصفح على تحميل الذكاء الاصطناعي فور فتح الصفحة
+        hands.initialize().then(() => {
+            aiReady = true;
+            aiGuidance.innerText = "✨ الذكاء الاصطناعي جاهز! اضغط تشغيل";
+            aiGuidance.style.color = "#00ff00";
+            aiGuidance.style.borderColor = "#00ff00";
         });
 
         hands.onResults((results) => {
@@ -92,7 +98,6 @@
                 } else {
                     let instructions = "";
                     
-                    // تعديل الاتجاهات حسب نوع الكاميرا (أمامية أو خلفية)
                     if (currentFacingMode === "user") {
                         if (dx < -tolerance) instructions += "⬅️ لليسار ";
                         if (dx > tolerance) instructions += "➡️ لليمين ";
@@ -122,43 +127,41 @@
             requestAnimationFrame(processAIFrames);
         }
 
-        // 2. تشغيل الكاميرا (أمامية أو خلفية)
         function startCamera() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
             }
 
-            const constraints = {
-                video: { facingMode: currentFacingMode }
-            };
-
-            navigator.mediaDevices.getUserMedia(constraints)
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } })
                 .then((stream) => {
                     currentStream = stream;
                     video.srcObject = stream;
                     video.style.display = 'block';
                     crosshair.style.display = 'block';
                     setupControls.style.display = 'none';
-                    flipBtn.style.display = 'block'; // إظهار زر التبديل
+                    flipBtn.style.display = 'block';
                     
-                    // قلب الشاشة كمرآة إذا كانت الكاميرا أمامية
                     video.style.transform = currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
 
                     video.addEventListener('loadeddata', () => {
                         aiEnabled = true;
+                        // إذا كان الذكاء لم يكتمل تحميله بعد، نظهر رسالة
+                        if (!aiReady) {
+                            aiGuidance.innerText = "⏳ جاري إكمال تحميل الذكاء الاصطناعي...";
+                            aiGuidance.style.color = "orange";
+                            aiGuidance.style.borderColor = "orange";
+                        }
                         processAIFrames();
                     });
                 })
                 .catch((err) => {
                     alert("تعذر فتح الكاميرا، يرجى التأكد من الصلاحيات.");
-                    console.error(err);
                 });
         }
 
-        // 3. دالة تبديل الكاميرا
         function toggleCamera() {
-            aiEnabled = false; // إيقاف الذكاء مؤقتاً أثناء التبديل
-            aiGuidance.innerText = "🔄 جاري التبديل...";
+            aiEnabled = false; 
+            // تم إلغاء عبارة "جاري التبديل"
             currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
             startCamera();
         }
