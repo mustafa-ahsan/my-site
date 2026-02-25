@@ -2,212 +2,608 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI X-Ray Simulator Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI X-Ray Simulator Pro | محاكي الأشعة الذكي</title>
     
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
-    
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
-        body { margin: 0; background-color: #111; color: white; font-family: Arial, sans-serif; text-align: center; overflow: hidden; }
-        #camera-container { position: relative; width: 100vw; height: 65vh; background-color: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        
-        .setup-controls { z-index: 10; display: flex; flex-direction: column; gap: 15px; align-items: center; }
-        .action-btn { padding: 15px 30px; font-size: 18px; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        #start-btn { background-color: #28a745; display: block; }
-        #flip-btn { background-color: #17a2b8; display: none; position: absolute; bottom: 10px; right: 10px; z-index: 20; padding: 10px 15px; font-size: 14px;}
-        
-        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none; z-index: 1; transition: transform 0.3s;}
-        
-        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; z-index: 5; }
-        .line-h { position: absolute; width: 120px; height: 3px; background-color: rgba(255, 0, 0, 0.7); top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .line-v { position: absolute; width: 3px; height: 120px; background-color: rgba(255, 0, 0, 0.7); top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .center-dot { position: absolute; width: 10px; height: 10px; background-color: yellow; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        
-        #ai-guidance { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.8); padding: 10px 20px; border-radius: 10px; font-size: 18px; font-weight: bold; color: yellow; z-index: 10; display: none; border: 2px solid white; white-space: nowrap;}
-        
-        .controls { padding: 10px; height: 35vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 10; position: relative; background: #111;}
-        .mode-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
-        .mode-btn { padding: 12px 20px; font-size: 16px; background-color: #444; color: white; border: 2px solid #007bff; border-radius: 8px; cursor: pointer; transition: 0.3s;}
-        .mode-btn.active { background-color: #007bff; font-weight: bold; border-color: white;}
-        #info-text { margin-top: 10px; color: #00ff00; font-size: 14px; font-weight: bold; }
-        #dev-warning { margin-top: 15px; color: #ff9800; font-size: 13px; font-weight: bold; background-color: rgba(255, 152, 0, 0.1); padding: 5px 10px; border-radius: 5px; border: 1px dashed #ff9800; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Cairo:wght@400;700&family=Roboto:wght@400;700&display=swap');
+
+        :root {
+            --medical-cyan: #00acc1;
+        }
+
+        body {
+            margin: 0;
+            background-color: #050a0f;
+            color: #e0f2f1;
+            font-family: 'Cairo', 'Roboto', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+        }
+
+        .medical-font { font-family: 'Orbitron', sans-serif; }
+
+        /* Camera Viewport */
+        #viewport {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            background: #000;
+            overflow: hidden;
+            border-bottom: 2px solid var(--medical-cyan);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .crosshair-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            pointer-events: none;
+            display: none;
+        }
+
+        .guide-arrow {
+            position: absolute;
+            font-size: 2rem;
+            color: #ff5252;
+            transition: all 0.2s ease;
+            opacity: 0;
+        }
+
+        .panel-bg {
+            background: linear-gradient(180deg, #0a141d 0%, #050a0f 100%);
+        }
+
+        .mode-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 172, 193, 0.3);
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: var(--medical-cyan);
+            color: white;
+            box-shadow: 0 0 15px rgba(0, 172, 193, 0.5);
+        }
+
+        #flash {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white; opacity: 0; z-index: 100; pointer-events: none;
+        }
+
+        .scanner-line {
+            position: absolute;
+            width: 100%; height: 2px;
+            background: rgba(0, 255, 255, 0.5);
+            box-shadow: 0 0 10px #00ffff;
+            animation: scan 3s linear infinite;
+            display: none;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .pulse { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+        }
+
+        /* Language Toggle Button */
+        #lang-toggle {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 60;
+            background: rgba(0, 172, 193, 0.2);
+            border: 1px solid var(--medical-cyan);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <div id="camera-container">
-        <div id="ai-guidance">🔍 جاري تشغيل الذكاء الاصطناعي...</div>
+    <!-- Language Switcher -->
+    <button id="lang-toggle" onclick="toggleLanguage()">English</button>
+
+    <!-- X-Ray Viewport -->
+    <div id="viewport">
+        <div id="flash"></div>
+        <div class="scanner-line" id="scanner"></div>
         
-        <div class="setup-controls" id="setup-controls">
-            <button id="start-btn" class="action-btn" onclick="startCamera()">تشغيل المحاكي</button>
+        <video id="webcam" autoplay playsinline muted></video>
+
+        <!-- Initial Startup Screen -->
+        <div id="startup-screen" class="absolute inset-0 flex flex-col items-center justify-center z-50 bg-slate-900">
+            <div class="mb-6 text-cyan-400 text-6xl medical-font">AI X-RAY</div>
+            <p id="txt-subtitle" class="text-gray-400 mb-8">نظام محاكاة التوجيه الإشعاعي بالذكاء الاصطناعي</p>
+            <button id="btn-boot" onclick="bootSystem()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-10 py-4 rounded-full font-bold transition-all transform hover:scale-105 shadow-lg">
+                تشغيل النظام (BOOT)
+            </button>
         </div>
 
-        <video id="camera" autoplay playsinline muted></video>
-        <button id="flip-btn" class="action-btn" onclick="toggleCamera()">🔄 تبديل</button>
-        
-        <div class="crosshair" id="crosshair">
-            <div class="line-h"></div><div class="line-v"></div><div class="center-dot"></div>
+        <!-- AI Guidance Overlay -->
+        <div id="ai-hud" class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none hidden">
+            <div class="bg-black/60 border border-cyan-500/50 p-3 rounded text-xs medical-font">
+                <div class="text-cyan-400"><span id="lbl-detection">DETECTION</span>: <span id="detection-status">SEARCHING...</span></div>
+                <div class="text-gray-400">FPS: <span id="fps-val">0</span></div>
+            </div>
+            <div id="central-msg" class="bg-black/80 border-2 border-yellow-500 text-yellow-500 px-6 py-2 rounded-full font-bold text-lg shadow-lg">
+                ضع العضو في المركز
+            </div>
+            <div class="bg-black/60 border border-cyan-500/50 p-3 rounded text-right text-xs medical-font">
+                <div class="text-cyan-400">SID: 100 cm</div>
+                <div class="text-gray-400">FILTER: AL 2.5mm</div>
+            </div>
+        </div>
+
+        <!-- Crosshair & Arrows -->
+        <div class="crosshair-container" id="crosshair">
+            <div id="arrow-up" class="guide-arrow" style="top: -60px; left: 50%; transform: translateX(-50%);">▲</div>
+            <div id="arrow-down" class="guide-arrow" style="bottom: -60px; left: 50%; transform: translateX(-50%);">▼</div>
+            <div id="arrow-left" class="guide-arrow" style="left: -60px; top: 50%; transform: translateY(-50%);">◀</div>
+            <div id="arrow-right" class="guide-arrow" style="right: -60px; top: 50%; transform: translateY(-50%);">▶</div>
+
+            <div class="relative w-32 h-32 flex items-center justify-center">
+                <div class="absolute w-full h-0.5 bg-red-500/60"></div>
+                <div class="absolute h-full w-0.5 bg-red-500/60"></div>
+                <div class="w-4 h-4 rounded-full border-2 border-yellow-400 bg-yellow-400/20 shadow-[0_0_10px_#facc15]"></div>
+            </div>
+        </div>
+
+        <button onclick="toggleCamera()" id="flip-btn" class="absolute bottom-4 left-4 bg-white/10 hover:bg-white/20 p-3 rounded-full hidden z-30">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+        </button>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="h-[40vh] panel-bg p-4 flex flex-col overflow-y-auto">
+        <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="bg-black/40 p-2 rounded border border-white/5 text-center">
+                <span class="block text-[10px] text-gray-500 medical-font uppercase">kVp</span>
+                <span class="text-xl text-cyan-400 medical-font font-bold" id="val-kvp">65</span>
+            </div>
+            <div class="bg-black/40 p-2 rounded border border-white/5 text-center">
+                <span class="block text-[10px] text-gray-500 medical-font uppercase">mAs</span>
+                <span class="text-xl text-cyan-400 medical-font font-bold" id="val-mas">4.5</span>
+            </div>
+            <div class="bg-black/40 p-2 rounded border border-white/5 text-center">
+                <span class="block text-[10px] text-gray-500 medical-font uppercase">AEC</span>
+                <span class="text-xl text-orange-400 medical-font font-bold" id="val-aec">OFF</span>
+            </div>
+        </div>
+
+        <!-- Mode Selection -->
+        <div id="modes-list" class="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
+            <!-- Populated via JS -->
+        </div>
+
+        <!-- Main Action Buttons -->
+        <div class="flex gap-4 mt-auto">
+            <button id="prep-btn" class="flex-1 bg-yellow-600/20 border border-yellow-600 text-yellow-600 py-4 rounded-xl font-bold active:bg-yellow-600 active:text-black transition-colors uppercase">
+                PREP
+            </button>
+            <button id="expose-btn" onclick="triggerExposure()" class="flex-1 bg-red-600/20 border border-red-600 text-red-600 py-4 rounded-xl font-bold opacity-50 cursor-not-allowed uppercase">
+                EXPOSE
+            </button>
+        </div>
+
+        <div class="mt-4 text-[10px] text-gray-600 text-center uppercase tracking-widest medical-font">
+            Radiology Simulation Interface v2.5 Pro
         </div>
     </div>
 
-    <div class="controls">
-        <div id="info">اضغط تشغيل، ثم اختر وضعية التصوير:</div>
-        <div class="mode-buttons" id="mode-buttons">
-            <button class="mode-btn active" id="btn-hand" onclick="setMode('hand')">🖐️ Hand AP</button>
-            <button class="mode-btn" id="btn-chest" onclick="setMode('chest')">🫁 Chest PA</button>
+    <!-- AI Chat Tutor Interface -->
+    <button onclick="toggleChat()" class="absolute bottom-6 right-6 bg-cyan-600 hover:bg-cyan-500 text-white p-4 rounded-full z-40 shadow-[0_0_15px_rgba(0,172,193,0.5)] transition-transform transform hover:scale-110">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </button>
+
+    <div id="chat-panel" class="hidden fixed bottom-24 right-6 w-80 max-w-[90vw] h-[400px] bg-gray-900 border border-cyan-500 rounded-xl z-50 flex-col shadow-2xl overflow-hidden">
+        <div class="bg-cyan-900/90 p-3 flex justify-between items-center text-white border-b border-cyan-500/50">
+            <span id="lbl-chat-title" class="font-bold text-sm medical-font">AI Tutor</span>
+            <button onclick="toggleChat()" class="hover:text-red-400 font-bold px-2 text-lg">✕</button>
         </div>
-        <div id="info-text">السنتر: مفصل (3rd MCP)</div>
-        <div id="dev-warning">⚠️ الأداة حالياً تحت التطوير التجريبي - قد تواجه بعض الأخطاء ⚠️</div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm bg-black/60 scroll-smooth">
+            <!-- Messages render here -->
+        </div>
+        <div class="p-3 border-t border-cyan-900 bg-gray-900 flex gap-2">
+            <input type="text" id="chat-input" class="flex-1 bg-black text-white rounded-lg px-3 py-2 outline-none border border-gray-700 focus:border-cyan-500 text-sm transition-colors" placeholder="Ask about positioning...">
+            <button onclick="sendChatMessage()" id="btn-chat-send" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg text-white font-bold text-sm transition-colors shadow-lg">Send</button>
+        </div>
     </div>
 
     <script>
-        const video = document.getElementById('camera');
-        const aiGuidance = document.getElementById('ai-guidance');
-        const setupControls = document.getElementById('setup-controls');
-        const flipBtn = document.getElementById('flip-btn');
+        const video = document.getElementById('webcam');
         const crosshair = document.getElementById('crosshair');
-        const modeButtons = document.getElementById('mode-buttons');
-        const infoText = document.getElementById('info-text');
-        
+        const startup = document.getElementById('startup-screen');
+        const aiHud = document.getElementById('ai-hud');
+        const centralMsg = document.getElementById('central-msg');
+        const detectionStatus = document.getElementById('detection-status');
+        const flash = document.getElementById('flash');
+        const scanner = document.getElementById('scanner');
+
+        let currentMode = 'hand';
         let aiEnabled = false;
-        let currentFacingMode = "environment";
-        let currentStream = null;
-        let currentMode = 'hand'; 
-        let pose = null; // لن يتم تعريفه إلا عند اختيار الصدر لتقليل الثقل
+        let isProcessing = false;
+        let facingMode = "environment";
+        let lastFrameTime = Date.now();
+        let currentLang = 'ar';
 
-        // 1. إعداد ذكاء اليد (سريع وبدون أوامر معقدة)
+        const i18n = {
+            ar: {
+                toggle: "English",
+                subtitle: "نظام محاكاة التوجيه الإشعاعي بالذكاء الاصطناعي",
+                boot: "تشغيل النظام (BOOT)",
+                detection: "الاستشعار",
+                searching: "جاري البحث...",
+                locked: "تم التثبيت",
+                initial_msg: "ضع العضو في المركز",
+                look_patient: "ابحث عن المريض...",
+                move_center: "حرك الكاميرا للتوسيط",
+                success_capture: "📸 تم التقاط الصورة بنجاح!",
+                prep: "تجهيز (PREP)",
+                expose: "تصوير (EXPOSE)",
+                aec: "مغلق",
+                modes: {
+                    hand: "🖐️ يد (Hand)",
+                    chest: "🫁 صدر (Chest)",
+                    foot: "👣 قدم (Foot)",
+                    knee: "🦴 ركبة (Knee)"
+                },
+                success_msgs: {
+                    hand: "السنتر على مفصل MCP",
+                    chest: "السنتر على مستوى T7",
+                    foot: "السنتر على قاعدة المشط الثالث",
+                    knee: "السنتر على مفصل الركبة"
+                },
+                chat_title: "المعلم الذكي (AI Tutor)",
+                chat_placeholder: "اسأل عن وضعيات التصوير...",
+                chat_send: "إرسال",
+                chat_welcome: "مرحباً! أنا مساعدك الذكي لتعلم التصوير الإشعاعي. هل لديك أي سؤال حول وضعيات التصوير، عوامل التعريض، أو التشريح؟"
+            },
+            en: {
+                toggle: "العربية",
+                subtitle: "AI-Powered Radiological Guidance Simulator",
+                boot: "BOOT SYSTEM",
+                detection: "DETECTION",
+                searching: "SEARCHING...",
+                locked: "LOCKED",
+                initial_msg: "Place limb in center",
+                look_patient: "Looking for patient...",
+                move_center: "Move camera to center",
+                success_capture: "📸 Capture Successful!",
+                prep: "PREP",
+                expose: "EXPOSE",
+                aec: "OFF",
+                modes: {
+                    hand: "🖐️ Hand AP",
+                    chest: "🫁 Chest PA",
+                    foot: "👣 Foot AP",
+                    knee: "🦴 Knee LAT"
+                },
+                success_msgs: {
+                    hand: "CENTRAL RAY ON MCP",
+                    chest: "CENTRAL RAY ON T7",
+                    foot: "CENTRAL RAY ON 3RD METATARSAL",
+                    knee: "CENTRAL RAY ON KNEE JOINT"
+                },
+                chat_title: "AI Radiology Tutor",
+                chat_placeholder: "Ask about positioning...",
+                chat_send: "Send",
+                chat_welcome: "Hello! I'm your AI Radiology Tutor. Do you have any questions about positioning, exposure factors, or anatomy?"
+            }
+        };
+
+        // Models Init
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-        hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5 });
 
-        // دالة التوجيه والدقة
-        function updateGuidance(dx, dy, targetName, tolX, tolY) {
-            if (Math.abs(dx) < tolX && Math.abs(dy) < tolY) {
-                aiGuidance.innerText = "✅ سنتر ممتاز على " + targetName + "!";
-                aiGuidance.style.color = "#00ff00";
-                aiGuidance.style.borderColor = "#00ff00";
-            } else {
-                let instructions = "";
-                if (currentFacingMode === "user") {
-                    if (dx < -tolX) instructions += "➡️ لليمين ";
-                    if (dx > tolX) instructions += "⬅️ لليسار ";
-                } else {
-                    if (dx < -tolX) instructions += "⬅️ لليسار "; 
-                    if (dx > tolX) instructions += "➡️ لليمين "; 
-                }
-                
-                if (dy < -tolY) instructions += "⬆️ للأعلى ";   
-                if (dy > tolY) instructions += "⬇️ للأسفل ";   
-                
-                aiGuidance.innerText = instructions;
-                aiGuidance.style.color = "#ff3333";
-                aiGuidance.style.borderColor = "#ff3333";
-            }
+        const pose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
+        pose.setOptions({ modelComplexity: 1, minDetectionConfidence: 0.5 });
+
+        function updateUIStrings() {
+            const lang = i18n[currentLang];
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.lang = currentLang;
+            
+            document.getElementById('lang-toggle').innerText = lang.toggle;
+            document.getElementById('txt-subtitle').innerText = lang.subtitle;
+            document.getElementById('btn-boot').innerText = lang.boot;
+            document.getElementById('lbl-detection').innerText = lang.detection;
+            document.getElementById('val-aec').innerText = lang.aec;
+            document.getElementById('prep-btn').innerText = lang.prep;
+            document.getElementById('expose-btn').innerText = lang.expose;
+            
+            document.getElementById('lbl-chat-title').innerText = lang.chat_title;
+            document.getElementById('chat-input').placeholder = lang.chat_placeholder;
+            document.getElementById('btn-chat-send').innerText = lang.chat_send;
+            
+            if (!aiEnabled) centralMsg.innerText = lang.initial_msg;
+            
+            // Re-render modes
+            const list = document.getElementById('modes-list');
+            list.innerHTML = '';
+            Object.keys(lang.modes).forEach(key => {
+                const btn = document.createElement('button');
+                btn.id = 'm-' + key;
+                btn.className = `mode-btn flex-shrink-0 px-5 py-3 rounded-lg text-sm font-bold ${currentMode === key ? 'active' : ''}`;
+                btn.innerText = lang.modes[key];
+                btn.onclick = () => setMode(key);
+                list.appendChild(btn);
+            });
         }
 
-        // تحليل اليد
-        hands.onResults((results) => {
-            if (!aiEnabled || currentMode !== 'hand') return;
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const lm = results.multiHandLandmarks[0][9];
-                updateGuidance(lm.x - 0.5, lm.y - 0.5, "3rd MCP", 0.06, 0.06);
-            } else {
-                aiGuidance.innerText = "🔍 ابحث عن يد المريض...";
-                aiGuidance.style.color = "yellow";
-            }
-        });
-
-        // تشغيل الذكاء (بدون Promises معقدة، يرسل الصورة والذكاء يحمل نفسه تلقائياً)
-        async function processAIFrames() {
-            if (aiEnabled && video.readyState >= 2) {
-                try {
-                    if (currentMode === 'hand') {
-                        await hands.send({image: video});
-                    } else if (currentMode === 'chest' && pose) {
-                        await pose.send({image: video});
-                    }
-                } catch (error) {
-                    console.log("جار التحميل بالخلفية...");
-                }
-            }
-            requestAnimationFrame(processAIFrames);
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            updateUIStrings();
         }
 
-        // إعداد ذكاء الصدر (عند الطلب فقط)
-        function initPoseModel() {
-            if (!pose) {
-                aiGuidance.innerText = "⏳ جاري تحميل ذكاء الصدر لأول مرة...";
-                aiGuidance.style.color = "orange";
-                
-                pose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
-                pose.setOptions({ modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
-                
-                pose.onResults((results) => {
-                    if (!aiEnabled || currentMode !== 'chest') return;
-                    if (results.poseLandmarks) {
-                        const leftShoulder = results.poseLandmarks[11];
-                        const rightShoulder = results.poseLandmarks[12];
-                        
-                        let midX = (leftShoulder.x + rightShoulder.x) / 2;
-                        let midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
-                        let shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
-                        
-                        let t7_Y = midShoulderY + (shoulderWidth * 0.30); 
-                        
-                        // الدقة الصارمة لـ T7 (2.5% عمودياً)
-                        updateGuidance(midX - 0.5, t7_Y - 0.5, "T7 Level", 0.05, 0.025);
-                    } else {
-                        aiGuidance.innerText = "🔍 ابحث عن ظهر المريض (الأكتاف)...";
-                        aiGuidance.style.color = "yellow";
-                    }
+        function bootSystem() {
+            startup.innerHTML = `<div class="text-cyan-400 medical-font text-2xl animate-pulse uppercase">${currentLang === 'ar' ? 'جاري التحميل...' : 'LOADING SYSTEM...'}</div>`;
+            setTimeout(startCamera, 1000);
+        }
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
                 });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                video.style.transform = facingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
+                
+                video.onloadedmetadata = () => {
+                    startup.style.display = 'none';
+                    aiHud.classList.remove('hidden');
+                    crosshair.style.display = 'block';
+                    document.getElementById('flip-btn').classList.remove('hidden');
+                    scanner.style.display = 'block';
+                    aiEnabled = true;
+                    runDetection();
+                };
+            } catch (err) {
+                alert(currentLang === 'ar' ? "خطأ في الكاميرا" : "Camera Error");
             }
+        }
+
+        function toggleCamera() {
+            aiEnabled = false;
+            facingMode = facingMode === "environment" ? "user" : "environment";
+            startCamera();
         }
 
         function setMode(mode) {
             currentMode = mode;
-            document.getElementById('btn-hand').classList.remove('active');
-            document.getElementById('btn-chest').classList.remove('active');
-            document.getElementById('btn-' + mode).classList.add('active');
+            updateUIStrings();
+            const specs = {
+                hand: {kv: 55, mas: 2.0},
+                chest: {kv: 110, mas: 4.0},
+                foot: {kv: 60, mas: 2.5},
+                knee: {kv: 70, mas: 8.0}
+            };
+            document.getElementById('val-kvp').innerText = specs[mode].kv;
+            document.getElementById('val-mas').innerText = specs[mode].mas;
+            centralMsg.innerText = i18n[currentLang].searching;
+        }
+
+        hands.onResults(results => {
+            if (currentMode === 'hand' || currentMode === 'foot') {
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    const center = results.multiHandLandmarks[0][9]; 
+                    handleGuidance(center.x, center.y, i18n[currentLang].success_msgs[currentMode]);
+                } else {
+                    lostTarget();
+                }
+            }
+        });
+
+        pose.onResults(results => {
+            if (currentMode === 'chest' || currentMode === 'knee') {
+                if (results.poseLandmarks) {
+                    const ls = results.poseLandmarks[11];
+                    const rs = results.poseLandmarks[12];
+                    const centerX = (ls.x + rs.x) / 2;
+                    const centerY = (ls.y + rs.y) / 2 + 0.15; 
+                    handleGuidance(centerX, centerY, i18n[currentLang].success_msgs[currentMode]);
+                } else {
+                    lostTarget();
+                }
+            }
+        });
+
+        function handleGuidance(x, y, successMsg) {
+            detectionStatus.innerText = i18n[currentLang].locked;
+            detectionStatus.className = "text-green-400";
             
-            if (mode === 'chest') {
-                infoText.innerText = "السنتر: مستوى الزاوية السفلية للوح الكتف (T7)";
-                initPoseModel(); // استدعاء الصدر فقط إذا احتاجه
+            const dx = x - 0.5;
+            const dy = y - 0.5;
+            const tol = 0.06;
+
+            document.querySelectorAll('.guide-arrow').forEach(a => a.style.opacity = 0);
+
+            if (Math.abs(dx) < tol && Math.abs(dy) < tol) {
+                centralMsg.innerText = "✅ " + successMsg;
+                centralMsg.className = "bg-green-600 text-white px-6 py-2 rounded-full font-bold shadow-lg";
+                enableExpose(true);
             } else {
-                infoText.innerText = "السنتر: مفصل (3rd MCP Joint)";
-                aiGuidance.innerText = "🔍 ابحث عن يد المريض...";
+                centralMsg.innerText = i18n[currentLang].move_center;
+                centralMsg.className = "bg-black/80 border-2 border-yellow-500 text-yellow-500 px-6 py-2 rounded-full font-bold";
+                enableExpose(false);
+                
+                if (dy < -tol) document.getElementById('arrow-up').style.opacity = 1;
+                if (dy > tol) document.getElementById('arrow-down').style.opacity = 1;
+                
+                const factor = facingMode === "user" ? -1 : 1;
+                if (dx * factor < -tol) document.getElementById(factor === 1 ? 'arrow-left' : 'arrow-right').style.opacity = 1;
+                if (dx * factor > tol) document.getElementById(factor === 1 ? 'arrow-right' : 'arrow-left').style.opacity = 1;
             }
         }
 
-        function startCamera() {
-            if (currentStream) currentStream.getTracks().forEach(track => track.stop());
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } })
-                .then((stream) => {
-                    currentStream = stream;
-                    video.srcObject = stream;
-                    video.style.display = 'block';
-                    crosshair.style.display = 'block';
-                    setupControls.style.display = 'none';
-                    flipBtn.style.display = 'block';
-                    modeButtons.style.display = 'flex'; 
-                    aiGuidance.style.display = 'block';
-                    
-                    video.style.transform = currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
-
-                    video.addEventListener('loadeddata', () => {
-                        aiEnabled = true;
-                        processAIFrames(); // يبدأ إرسال الفريمات فوراً
-                    });
-                })
-                .catch((err) => { alert("تعذر فتح الكاميرا، يرجى إعطاء الصلاحية."); });
+        function lostTarget() {
+            detectionStatus.innerText = i18n[currentLang].searching;
+            detectionStatus.className = "text-yellow-400";
+            centralMsg.innerText = i18n[currentLang].look_patient;
+            document.querySelectorAll('.guide-arrow').forEach(a => a.style.opacity = 0);
+            enableExpose(false);
         }
 
-        function toggleCamera() {
-            aiEnabled = false; 
-            currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
-            startCamera();
+        async function runDetection() {
+            if (!aiEnabled || isProcessing) {
+                requestAnimationFrame(runDetection);
+                return;
+            }
+            
+            if (video.readyState >= 2) {
+                isProcessing = true;
+                try {
+                    if (currentMode === 'hand' || currentMode === 'foot') {
+                        await hands.send({image: video});
+                    } else {
+                        await pose.send({image: video});
+                    }
+                } catch (err) {
+                    console.debug("AI Frame skip");
+                } finally {
+                    isProcessing = false;
+                }
+            }
+
+            const now = Date.now();
+            document.getElementById('fps-val').innerText = Math.round(1000 / (now - lastFrameTime));
+            lastFrameTime = now;
+            requestAnimationFrame(runDetection);
         }
+
+        function enableExpose(status) {
+            const btn = document.getElementById('expose-btn');
+            if (status) {
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.classList.add('bg-red-600', 'text-white', 'pulse');
+            } else {
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.classList.remove('bg-red-600', 'text-white', 'pulse');
+            }
+        }
+
+        function triggerExposure() {
+            if (document.getElementById('expose-btn').classList.contains('cursor-not-allowed')) return;
+            flash.style.opacity = 1;
+            setTimeout(() => { flash.style.opacity = 0; }, 100);
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            const oldMsg = centralMsg.innerText;
+            centralMsg.innerText = i18n[currentLang].success_capture;
+            setTimeout(() => { centralMsg.innerText = oldMsg; }, 2000);
+        }
+
+        // --- AI Chat Tutor Logic ---
+        const apiKey = ""; 
+        let chatInitialized = false;
+
+        function toggleChat() {
+            const panel = document.getElementById('chat-panel');
+            panel.classList.toggle('hidden');
+            panel.classList.toggle('flex');
+            
+            if (!chatInitialized) {
+                appendMessage(i18n[currentLang].chat_welcome, 'ai');
+                chatInitialized = true;
+            }
+        }
+
+        document.getElementById('chat-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendChatMessage();
+        });
+
+        async function sendChatMessage() {
+            const inputEl = document.getElementById('chat-input');
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            // Add user message
+            appendMessage(text, 'user');
+            inputEl.value = '';
+            
+            // Show typing indicator
+            const loadingId = appendMessage(currentLang === 'ar' ? "يكتب..." : "Typing...", 'ai');
+
+            // Set AI behavior context
+            const sysPrompt = currentLang === 'ar' 
+                ? "أنت خبير في التصوير الإشعاعي (أشعة إكس) وتعمل كمعلم لطالب طب/أشعة. أجب على الأسئلة المتعلقة بوضعيات المرضى، علم التشريح، وعوامل التعريض باختصار وبطريقة علمية دقيقة وواضحة."
+                : "You are an expert radiographer acting as a tutor for a medical/radiology student. Answer questions related to patient positioning, anatomy, and exposure factors concisely, scientifically, and clearly.";
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text }] }],
+                        systemInstruction: { parts: [{ text: sysPrompt }] }
+                    })
+                });
+                const data = await response.json();
+                const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || (currentLang === 'ar' ? "عذراً، حدث خطأ." : "Sorry, an error occurred.");
+                updateMessage(loadingId, aiResponse);
+            } catch (error) {
+                updateMessage(loadingId, currentLang === 'ar' ? "فشل الاتصال بالخادم. حاول مجدداً." : "Connection failed. Please try again.");
+            }
+        }
+
+        function appendMessage(text, sender) {
+            const chatBox = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            const msgId = 'msg-' + Date.now();
+            msgDiv.id = msgId;
+            
+            // Direction based on UI language
+            const isRTL = currentLang === 'ar';
+            
+            msgDiv.className = `p-3 rounded-xl max-w-[85%] text-[13px] leading-relaxed shadow-md ${
+                sender === 'user' 
+                ? `bg-cyan-700 text-white self-end ${isRTL ? 'rounded-tl-none' : 'rounded-tr-none'}` 
+                : `bg-gray-800 border border-gray-700 text-gray-200 self-start ${isRTL ? 'rounded-tr-none' : 'rounded-tl-none'}`
+            }`;
+            msgDiv.innerText = text;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return msgId;
+        }
+
+        function updateMessage(id, text) {
+            const msgDiv = document.getElementById(id);
+            if (msgDiv) {
+                msgDiv.innerText = text;
+                const chatBox = document.getElementById('chat-messages');
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        // Init
+        updateUIStrings();
+        
     </script>
 </body>
 </html>
