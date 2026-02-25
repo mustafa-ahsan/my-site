@@ -13,16 +13,18 @@
         
         .setup-controls { z-index: 10; display: flex; flex-direction: column; gap: 15px; align-items: center; }
         .action-btn { padding: 15px 30px; font-size: 18px; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        #start-btn { background-color: #28a745; }
+        #start-btn { background-color: #28a745; display: none; }
         #flip-btn { background-color: #17a2b8; display: none; position: absolute; bottom: 10px; right: 10px; z-index: 20; padding: 10px 15px; font-size: 14px;}
         
         video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none; z-index: 1; transition: transform 0.3s;}
         
+        /* تصميم الزائد (السنتر) */
         .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; z-index: 5; }
         .line-h { position: absolute; width: 120px; height: 3px; background-color: rgba(255, 0, 0, 0.7); top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .line-v { position: absolute; width: 3px; height: 120px; background-color: rgba(255, 0, 0, 0.7); top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .center-dot { position: absolute; width: 10px; height: 10px; background-color: yellow; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         
+        /* شريط التوجيه الذكي */
         #ai-guidance { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.8); padding: 10px 20px; border-radius: 10px; font-size: 18px; font-weight: bold; color: yellow; z-index: 10; display: block; border: 2px solid white; white-space: nowrap;}
         
         .controls { padding: 10px; height: 35vh; display: flex; flex-direction: column; justify-content: flex-start; z-index: 10; position: relative; background: #111;}
@@ -56,12 +58,14 @@
         const setupControls = document.getElementById('setup-controls');
         const flipBtn = document.getElementById('flip-btn');
         const crosshair = document.getElementById('crosshair');
+        const startBtn = document.getElementById('start-btn');
         
         let aiEnabled = false;
         let aiReady = false;
-        let currentFacingMode = "environment";
+        let currentFacingMode = "environment"; // الكاميرا الخلفية هي الافتراضية
         let currentStream = null;
 
+        // 1. إعداد نموذج الذكاء الاصطناعي (MediaPipe Hands)
         const hands = new Hands({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         }});
@@ -79,13 +83,15 @@
             aiGuidance.innerText = "✨ الذكاء الاصطناعي جاهز! اضغط تشغيل";
             aiGuidance.style.color = "#00ff00";
             aiGuidance.style.borderColor = "#00ff00";
+            startBtn.style.display = 'block'; // إظهار زر التشغيل بعد التحميل
         });
 
+        // 2. تحليل النتائج وتوجيه المستخدم لتعديل مكان الكاميرا
         hands.onResults((results) => {
             if (!aiEnabled) return;
 
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const lm = results.multiHandLandmarks[0][9]; // 3rd MCP Joint
+                const lm = results.multiHandLandmarks[0][9]; // النقطة 9: قاعدة الإصبع الأوسط (3rd MCP)
                 
                 let dx = lm.x - 0.5;
                 let dy = lm.y - 0.5;
@@ -98,16 +104,17 @@
                 } else {
                     let instructions = "";
                     
+                    // الاتجاهات المصححة لتوجيه الموبايل (الكاميرا) بدلاً من المريض
                     if (currentFacingMode === "user") {
-                        if (dx < -tolerance) instructions += "⬅️ لليسار ";
-                        if (dx > tolerance) instructions += "➡️ لليمين ";
-                    } else {
                         if (dx < -tolerance) instructions += "➡️ لليمين ";
                         if (dx > tolerance) instructions += "⬅️ لليسار ";
+                    } else {
+                        if (dx < -tolerance) instructions += "⬅️ لليسار "; 
+                        if (dx > tolerance) instructions += "➡️ لليمين "; 
                     }
                     
-                    if (dy < -tolerance) instructions += "⬇️ للأسفل ";
-                    if (dy > tolerance) instructions += "⬆️ للأعلى ";
+                    if (dy < -tolerance) instructions += "⬆️ للأعلى ";   
+                    if (dy > tolerance) instructions += "⬇️ للأسفل ";   
                     
                     aiGuidance.innerText = instructions;
                     aiGuidance.style.color = "#ff3333";
@@ -127,6 +134,7 @@
             requestAnimationFrame(processAIFrames);
         }
 
+        // 3. تشغيل الكاميرا
         function startCamera() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
@@ -141,11 +149,11 @@
                     setupControls.style.display = 'none';
                     flipBtn.style.display = 'block';
                     
+                    // قلب الشاشة كمرآة فقط إذا كانت الكاميرا أمامية
                     video.style.transform = currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
 
                     video.addEventListener('loadeddata', () => {
                         aiEnabled = true;
-                        // إذا كان الذكاء لم يكتمل تحميله بعد، نظهر رسالة
                         if (!aiReady) {
                             aiGuidance.innerText = "⏳ جاري إكمال تحميل الذكاء الاصطناعي...";
                             aiGuidance.style.color = "orange";
@@ -159,9 +167,9 @@
                 });
         }
 
+        // 4. تبديل الكاميرا (أمامية / خلفية)
         function toggleCamera() {
             aiEnabled = false; 
-            // تم إلغاء عبارة "جاري التبديل"
             currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
             startCamera();
         }
