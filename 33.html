@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-Ray Positioning Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            overflow: hidden; /* لمنع التمرير */
+        }
+        #camera-container {
+            position: relative;
+            width: 100vw;
+            height: 75vh;
+            background-color: #000;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* لملء الشاشة بالكامل */
+        }
+        /* تصميم "الزائد" الخاص بالسنترينك */
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* لكي لا يمنع لمس الشاشة */
+        }
+        .line-h {
+            position: absolute;
+            width: 120px;
+            height: 2px;
+            background-color: red;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .line-v {
+            position: absolute;
+            width: 2px;
+            height: 120px;
+            background-color: red;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .center-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: red;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        /* تصميم الأزرار والتعليمات */
+        .controls {
+            padding: 15px;
+            height: 25vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        #info {
+            font-size: 18px;
+            color: yellow;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="camera-container">
+        <video id="camera" autoplay playsinline></video>
+        
+        <div class="crosshair">
+            <div class="line-h"></div>
+            <div class="line-v"></div>
+            <div class="center-dot"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div id="info">وجه الكاميرا واختر وضعية للبدء</div>
+        <div class="buttons">
+            <button onclick="setMode('Hand AP', 'السنتر: المفصل المشطي السلامي الثالث (3rd MCP Joint)')">Hand AP</button>
+            <button onclick="setMode('Chest PA', 'السنتر: الفقرة الصدرية السابعة (T7 Level)')">Chest PA</button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('camera');
+        const info = document.getElementById('info');
+
+        // طلب تشغيل الكاميرا الخلفية (environment) من المتصفح
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(function(stream) {
+                video.srcObject = stream;
+            })
+            .catch(function(error) {
+                info.innerText = "يرجى إعطاء صلاحية الكاميرا للمتصفح!";
+                info.style.color = "red";
+                console.error("Camera error:", error);
+            });
+
+        // دالة تغيير التعليمات عند الضغط على الأزرار
+        function setMode(mode, text) {
+            info.innerText = text;
+        }
+    </script>
+
+</body>
+</html>
