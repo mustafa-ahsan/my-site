@@ -79,9 +79,9 @@
         let handsReady = false;
         let poseReady = false;
         let poseInitialized = false;
-        let pose = null; // سيتم تعريفه فقط عند اختيار الصدر
+        let pose = null; 
 
-        // --- إعداد موديل اليد (يتحمل فوراً) ---
+        // --- إعداد موديل اليد ---
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
         hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
         hands.initialize().then(() => { 
@@ -95,7 +95,7 @@
             }
         });
 
-        // --- دالة التوجيه العامة ---
+        // --- دالة التوجيه ---
         function updateGuidance(dx, dy, targetName) {
             let tolerance = 0.08;
             if (Math.abs(dx) < tolerance && Math.abs(dy) < tolerance) {
@@ -149,95 +149,10 @@
                     let midX = (leftShoulder.x + rightShoulder.x) / 2;
                     let midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
                     
-                    // حساب المسافة بين الكتفين كمقياس ديناميكي
                     let shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
                     
-                    // النزول بنسبة 55% من عرض الأكتاف للوصول للزاوية السفلية للوح الكتف (T7)
-                    let t7_Y = midShoulderY + (shoulderWidth * 0.55); 
+                    // التعديل السحري هنا: النزول بنسبة 30% فقط بدلاً من 55% لرفع السنتر للـ T7
+                    let t7_Y = midShoulderY + (shoulderWidth * 0.30); 
                     
                     updateGuidance(midX - 0.5, t7_Y - 0.5, "T7 Level");
-                } else {
-                    aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض (الأكتاف)...";
-                    aiGuidance.style.color = "yellow";
                 }
-            });
-
-            pose.initialize().then(() => {
-                poseReady = true;
-                if(aiEnabled && currentMode === 'chest') {
-                    aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض...";
-                    aiGuidance.style.color = "yellow";
-                }
-            });
-        }
-
-        async function processAIFrames() {
-            if (aiEnabled && video.readyState >= 2) {
-                if (currentMode === 'hand' && handsReady) {
-                    await hands.send({image: video});
-                } else if (currentMode === 'chest' && poseReady && pose) {
-                    await pose.send({image: video});
-                }
-            }
-            requestAnimationFrame(processAIFrames);
-        }
-
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('btn-hand').classList.remove('active');
-            document.getElementById('btn-chest').classList.remove('active');
-            document.getElementById('btn-' + mode).classList.add('active');
-            
-            if (mode === 'chest') {
-                infoText.innerText = "السنتر: مستوى الزاوية السفلية للوح الكتف (T7)";
-                if (!poseInitialized) {
-                    poseInitialized = true;
-                    loadPoseModel(); // التحميل يبدأ هنا فقط!
-                } else if (!poseReady) {
-                    aiGuidance.innerText = "⏳ جاري إكمال تحميل ذكاء الصدر...";
-                } else {
-                    aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض...";
-                }
-            } else {
-                infoText.innerText = "السنتر: مفصل (3rd MCP Joint)";
-                if (!handsReady) {
-                    aiGuidance.innerText = "⏳ جاري إكمال تحميل ذكاء اليد...";
-                } else {
-                    aiGuidance.innerText = "🔍 وجه الكاميرا ليد المريض...";
-                }
-            }
-        }
-
-        function startCamera() {
-            if (currentStream) currentStream.getTracks().forEach(track => track.stop());
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } })
-                .then((stream) => {
-                    currentStream = stream;
-                    video.srcObject = stream;
-                    video.style.display = 'block';
-                    crosshair.style.display = 'block';
-                    setupControls.style.display = 'none';
-                    flipBtn.style.display = 'block';
-                    modeButtons.style.display = 'flex'; 
-                    
-                    video.style.transform = currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
-
-                    video.addEventListener('loadeddata', () => {
-                        aiEnabled = true;
-                        if (currentMode === 'hand' && !handsReady) {
-                            aiGuidance.innerText = "⏳ الكاميرا تعمل.. ننتظر الذكاء الاصطناعي لليد";
-                        }
-                        processAIFrames();
-                    });
-                })
-                .catch((err) => { alert("تعذر فتح الكاميرا، يرجى إعطاء الصلاحية."); });
-        }
-
-        function toggleCamera() {
-            aiEnabled = false; 
-            currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
-            startCamera();
-        }
-    </script>
-</body>
-</html>
