@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI X-Ray Simulator Pro</title>
     
-    <script src="https://unpkg.com/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
     
     <style>
         body { margin: 0; background-color: #111; color: white; font-family: Arial, sans-serif; text-align: center; overflow: hidden; }
@@ -25,7 +25,7 @@
         .line-v { position: absolute; width: 3px; height: 120px; background-color: rgba(255, 0, 0, 0.7); top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .center-dot { position: absolute; width: 10px; height: 10px; background-color: yellow; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         
-        #ai-guidance { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.8); padding: 10px 20px; border-radius: 10px; font-size: 18px; font-weight: bold; color: yellow; z-index: 10; display: block; border: 2px solid white; white-space: nowrap;}
+        #ai-guidance { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.8); padding: 10px 20px; border-radius: 10px; font-size: 18px; font-weight: bold; color: yellow; z-index: 10; display: none; border: 2px solid white; white-space: nowrap;}
         
         .controls { padding: 10px; height: 35vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 10; position: relative; background: #111;}
         .mode-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
@@ -38,7 +38,7 @@
 <body>
 
     <div id="camera-container">
-        <div id="ai-guidance">⏳ جاري تحميل ذكاء (اليد والصدر)...</div>
+        <div id="ai-guidance">🔍 جاري تشغيل الذكاء الاصطناعي...</div>
         
         <div class="setup-controls" id="setup-controls">
             <button id="start-btn" class="action-btn" onclick="startCamera()">تشغيل المحاكي</button>
@@ -75,35 +75,13 @@
         let currentFacingMode = "environment";
         let currentStream = null;
         let currentMode = 'hand'; 
-        
-        let modelsReady = false;
+        let pose = null; // لن يتم تعريفه إلا عند اختيار الصدر لتقليل الثقل
 
-        const hands = new Hands({locateFile: (file) => `https://unpkg.com/@mediapipe/hands/${file}`});
+        // 1. إعداد ذكاء اليد (سريع وبدون أوامر معقدة)
+        const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
         hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
-        
-        const pose = new Pose({locateFile: (file) => `https://unpkg.com/@mediapipe/pose/${file}`});
-        pose.setOptions({ modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
 
-        Promise.all([hands.initialize(), pose.initialize()]).then(() => {
-            modelsReady = true;
-            if (!aiEnabled) {
-                aiGuidance.innerText = "✨ جميع النماذج جاهزة! اضغط تشغيل";
-                aiGuidance.style.color = "#00ff00";
-            } else {
-                if(currentMode === 'hand') {
-                    aiGuidance.innerText = "🔍 وجه الكاميرا ليد المريض...";
-                } else {
-                    aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض...";
-                }
-                aiGuidance.style.color = "yellow";
-            }
-        }).catch(err => {
-            console.error(err);
-            aiGuidance.innerText = "❌ حدث خطأ في تحميل الذكاء الاصطناعي";
-            aiGuidance.style.color = "red";
-        });
-
-        // --- التعديل الجذري: دالة توجيه تدعم دقة مخصصة لكل وضعية ---
+        // دالة التوجيه والدقة
         function updateGuidance(dx, dy, targetName, tolX, tolY) {
             if (Math.abs(dx) < tolX && Math.abs(dy) < tolY) {
                 aiGuidance.innerText = "✅ سنتر ممتاز على " + targetName + "!";
@@ -119,7 +97,6 @@
                     if (dx > tolX) instructions += "➡️ لليمين "; 
                 }
                 
-                // التوجيه العمودي أصبح أكثر صرامة
                 if (dy < -tolY) instructions += "⬆️ للأعلى ";   
                 if (dy > tolY) instructions += "⬇️ للأسفل ";   
                 
@@ -129,51 +106,63 @@
             }
         }
 
-        // --- تحليل اليد ---
+        // تحليل اليد
         hands.onResults((results) => {
             if (!aiEnabled || currentMode !== 'hand') return;
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0][9];
-                // دقة اليد: 6% أفقياً و 6% عمودياً
                 updateGuidance(lm.x - 0.5, lm.y - 0.5, "3rd MCP", 0.06, 0.06);
             } else {
-                aiGuidance.innerText = "🔍 وجه الكاميرا ليد المريض...";
+                aiGuidance.innerText = "🔍 ابحث عن يد المريض...";
                 aiGuidance.style.color = "yellow";
             }
         });
 
-        // --- تحليل الصدر والسنتر على T7 ---
-        pose.onResults((results) => {
-            if (!aiEnabled || currentMode !== 'chest') return;
-            if (results.poseLandmarks) {
-                const leftShoulder = results.poseLandmarks[11];
-                const rightShoulder = results.poseLandmarks[12];
-                
-                let midX = (leftShoulder.x + rightShoulder.x) / 2;
-                let midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
-                let shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
-                
-                // النسبة 30% لرفع السنتر إلى T7
-                let t7_Y = midShoulderY + (shoulderWidth * 0.30); 
-                
-                // التعديل السحري هنا: دقة الصدر (5% أفقياً، و 2.5% فقط عمودياً!) 
-                // هذا يمنع النزول للـ T10 تماماً
-                updateGuidance(midX - 0.5, t7_Y - 0.5, "T7 Level", 0.05, 0.025);
-            } else {
-                aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض (الأكتاف)...";
-                aiGuidance.style.color = "yellow";
-            }
-        });
-
+        // تشغيل الذكاء (بدون Promises معقدة، يرسل الصورة والذكاء يحمل نفسه تلقائياً)
         async function processAIFrames() {
-            if (aiEnabled && video.readyState >= 2 && modelsReady) {
-                if (currentMode === 'hand') {
-                    await hands.send({image: video});
-                } else if (currentMode === 'chest') {
-                    await pose.send({image: video});
+            if (aiEnabled && video.readyState >= 2) {
+                try {
+                    if (currentMode === 'hand') {
+                        await hands.send({image: video});
+                    } else if (currentMode === 'chest' && pose) {
+                        await pose.send({image: video});
+                    }
+                } catch (error) {
+                    console.log("جار التحميل بالخلفية...");
                 }
             }
             requestAnimationFrame(processAIFrames);
+        }
+
+        // إعداد ذكاء الصدر (عند الطلب فقط)
+        function initPoseModel() {
+            if (!pose) {
+                aiGuidance.innerText = "⏳ جاري تحميل ذكاء الصدر لأول مرة...";
+                aiGuidance.style.color = "orange";
+                
+                pose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
+                pose.setOptions({ modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+                
+                pose.onResults((results) => {
+                    if (!aiEnabled || currentMode !== 'chest') return;
+                    if (results.poseLandmarks) {
+                        const leftShoulder = results.poseLandmarks[11];
+                        const rightShoulder = results.poseLandmarks[12];
+                        
+                        let midX = (leftShoulder.x + rightShoulder.x) / 2;
+                        let midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+                        let shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+                        
+                        let t7_Y = midShoulderY + (shoulderWidth * 0.30); 
+                        
+                        // الدقة الصارمة لـ T7 (2.5% عمودياً)
+                        updateGuidance(midX - 0.5, t7_Y - 0.5, "T7 Level", 0.05, 0.025);
+                    } else {
+                        aiGuidance.innerText = "🔍 ابحث عن ظهر المريض (الأكتاف)...";
+                        aiGuidance.style.color = "yellow";
+                    }
+                });
+            }
         }
 
         function setMode(mode) {
@@ -184,10 +173,10 @@
             
             if (mode === 'chest') {
                 infoText.innerText = "السنتر: مستوى الزاوية السفلية للوح الكتف (T7)";
-                if (modelsReady) aiGuidance.innerText = "🔍 وجه الكاميرا لظهر المريض...";
+                initPoseModel(); // استدعاء الصدر فقط إذا احتاجه
             } else {
                 infoText.innerText = "السنتر: مفصل (3rd MCP Joint)";
-                if (modelsReady) aiGuidance.innerText = "🔍 وجه الكاميرا ليد المريض...";
+                aiGuidance.innerText = "🔍 ابحث عن يد المريض...";
             }
         }
 
@@ -202,15 +191,13 @@
                     setupControls.style.display = 'none';
                     flipBtn.style.display = 'block';
                     modeButtons.style.display = 'flex'; 
+                    aiGuidance.style.display = 'block';
                     
                     video.style.transform = currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
 
                     video.addEventListener('loadeddata', () => {
                         aiEnabled = true;
-                        if (!modelsReady) {
-                            aiGuidance.innerText = "⏳ الكاميرا تعمل.. ننتظر تحميل الذكاء الاصطناعي";
-                        }
-                        processAIFrames();
+                        processAIFrames(); // يبدأ إرسال الفريمات فوراً
                     });
                 })
                 .catch((err) => { alert("تعذر فتح الكاميرا، يرجى إعطاء الصلاحية."); });
