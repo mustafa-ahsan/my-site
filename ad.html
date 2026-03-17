@@ -3,65 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شاهد الإعلان للحصول على الفيديو</title>
+    <title>تحميل الفيديو</title>
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
-        #timer { font-size: 3em; color: #ff0050; font-weight: bold; margin: 20px 0; }
-        .ad-space { width: 300px; height: 250px; background-color: #ddd; margin: 0 auto; line-height: 250px; border: 2px dashed #999; }
-        #status { font-size: 1.2em; color: #333; font-weight: bold; margin-top: 20px;}
+        #status { font-size: 1.5em; color: #333; font-weight: bold; margin-bottom: 20px;}
+        #action-btn { 
+            padding: 15px 30px; font-size: 1.2em; color: white; 
+            background-color: #0088cc; border: none; border-radius: 8px; 
+            cursor: pointer; display: none; /* مخفي في البداية */
+        }
+        #action-btn:hover { background-color: #0077b3; }
+        #loading { color: #ff0050; display: none; margin-top: 15px; font-size: 1.2em;}
     </style>
 </head>
 <body>
 
-    <h2>يرجى الانتظار ليتم إرسال الفيديو...</h2>
+    <div id="status">شاهد إعلاناً قصيراً للحصول على الفيديو</div>
     
-    <div class="ad-space">هنا سيظهر الإعلان لاحقاً</div>
-
-    <div id="timer">5</div>
-    <p id="status">ثانية...</p>
+    <button id="action-btn">مشاهدة الإعلان 📥</button>
+    <div id="loading">⏳ جاري إرسال الفيديو إلى تليكرام...</div>
 
     <script>
-        // سحب البيانات التي أرسلها البوت عبر الرابط
+        // استخراج البيانات اللي دزها البوت بالرابط
         const urlParams = new URLSearchParams(window.location.search);
         const videoUrl = urlParams.get('video');
         const chatId = urlParams.get('chat_id');
         const token = urlParams.get('token');
 
-        let timeLeft = 5;
-        const timerElement = document.getElementById('timer');
-        const statusElement = document.getElementById('status');
+        const btn = document.getElementById('action-btn');
+        const statusText = document.getElementById('status');
+        const loadingText = document.getElementById('loading');
 
-        const countdown = setInterval(() => {
-            timeLeft--;
-            timerElement.textContent = timeLeft;
+        // تجهيز إعلان Adsgram بالـ UnitID مالتك
+        // ملاحظة: تأكد من أن الـ blockId هو 25291
+        const AdController = window.Adsgram.init({ blockId: "25291" });
 
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                timerElement.style.display = 'none';
-                statusElement.textContent = "⏳ جاري إرسال الفيديو إلى التليكرام...";
+        // نظهر الزر للمستخدم
+        btn.style.display = 'inline-block';
 
-                // الاتصال بـ API تليكرام مباشرة لإرسال الفيديو
-                if (videoUrl && chatId && token) {
-                    const telegramApiUrl = `https://api.telegram.org/bot${token}/sendVideo?chat_id=${chatId}&video=${encodeURIComponent(videoUrl)}`;
-                    
-                    fetch(telegramApiUrl)
-                        .then(response => response.json())
-                        .then(data => {
-                            if(data.ok) {
-                                statusElement.style.color = "green";
-                                statusElement.textContent = "✅ تم إرسال الفيديو بنجاح! يمكنك إغلاق هذه الصفحة والعودة للتليكرام.";
-                            } else {
-                                statusElement.style.color = "red";
-                                statusElement.textContent = "❌ حدث خطأ أثناء الإرسال.";
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            statusElement.textContent = "❌ حدث خطأ في الاتصال.";
-                        });
-                }
+        btn.addEventListener('click', () => {
+            // من يضغط المستخدم، نشغل الإعلان
+            AdController.show().then((result) => {
+                // هذي الدالة تتنفذ من يكمل المستخدم مشاهدة الإعلان للآخر (Rewarded)
+                
+                // نخفي الزر ونغير النص
+                btn.style.display = 'none';
+                statusText.textContent = "✅ شكراً لك!";
+                loadingText.style.display = 'block';
+
+                // نرسل الفيديو للمستخدم عبر تليكرام
+                sendVideoToTelegram();
+
+            }).catch((error) => {
+                // إذا المستخدم سد الإعلان قبل لا يخلص، أو صار خطأ
+                alert("لم تكتمل المشاهدة أو حدث خطأ. حاول مرة أخرى.");
+            });
+        });
+
+        function sendVideoToTelegram() {
+            if (videoUrl && chatId && token) {
+                const telegramApiUrl = `https://api.telegram.org/bot${token}/sendVideo?chat_id=${chatId}&video=${encodeURIComponent(videoUrl)}`;
+                
+                fetch(telegramApiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.ok) {
+                            loadingText.style.color = "green";
+                            loadingText.textContent = "✅ تم الإرسال بنجاح! يمكنك إغلاق هذه الصفحة.";
+                        } else {
+                            loadingText.style.color = "red";
+                            loadingText.textContent = "❌ حدث خطأ أثناء الإرسال.";
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        loadingText.textContent = "❌ حدث خطأ في الاتصال.";
+                    });
             }
-        }, 1000);
+        }
     </script>
 
 </body>
