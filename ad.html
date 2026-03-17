@@ -6,26 +6,26 @@
     <title>تحميل الفيديو</title>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; padding: 20px;}
         #status { font-size: 1.5em; color: #333; font-weight: bold; margin-bottom: 20px;}
         #action-btn { 
             padding: 15px 30px; font-size: 1.2em; color: white; 
             background-color: #0088cc; border: none; border-radius: 8px; 
-            cursor: pointer; display: none; /* مخفي في البداية */
+            cursor: pointer; display: none; 
         }
         #action-btn:hover { background-color: #0077b3; }
+        #message-box { color: #555; font-size: 1.2em; margin-top: 20px; line-height: 1.6; display: none;}
         #loading { color: #ff0050; display: none; margin-top: 15px; font-size: 1.2em;}
     </style>
 </head>
 <body>
 
-    <div id="status">شاهد إعلاناً قصيراً للحصول على الفيديو</div>
-    
-    <button id="action-btn">مشاهدة الإعلان 📥</button>
+    <div id="status">جاري التحقق...</div>
+    <button id="action-btn">مشاهدة الإعلان للتحميل 📥</button>
+    <div id="message-box"></div>
     <div id="loading">⏳ جاري إرسال الفيديو إلى تليكرام...</div>
 
     <script>
-        // استخراج البيانات اللي دزها البوت بالرابط
         const urlParams = new URLSearchParams(window.location.search);
         const videoUrl = urlParams.get('video');
         const chatId = urlParams.get('chat_id');
@@ -33,33 +33,34 @@
 
         const btn = document.getElementById('action-btn');
         const statusText = document.getElementById('status');
+        const msgBox = document.getElementById('message-box');
         const loadingText = document.getElementById('loading');
 
-        // تجهيز إعلان Adsgram بالـ UnitID مالتك
-        // ملاحظة: تأكد من أن الـ blockId هو 25291
-        const AdController = window.Adsgram.init({ blockId: "25291" });
+        // التحقق: هل المستخدم قادم من البوت (معه رابط) أم دخل مباشرة (مثل المراجع)؟
+        if (!videoUrl || !chatId) {
+            // حالة المراجع (أو دخول مباشر)
+            statusText.textContent = "مرحباً بك في أداة تحميل تيك توك!";
+            msgBox.textContent = "الرجاء العودة إلى محادثة البوت وإرسال رابط فيديو تيك توك أولاً، وسنقوم بتجهيزه لك فوراً.";
+            msgBox.style.display = 'block';
+            btn.style.display = 'none'; // إخفاء زر الإعلان
+        } else {
+            // حالة المستخدم الحقيقي
+            statusText.textContent = "شاهد إعلاناً قصيراً للحصول على الفيديو";
+            btn.style.display = 'inline-block'; // إظهار زر الإعلان
 
-        // نظهر الزر للمستخدم
-        btn.style.display = 'inline-block';
+            const AdController = window.Adsgram.init({ blockId: "25291" });
 
-        btn.addEventListener('click', () => {
-            // من يضغط المستخدم، نشغل الإعلان
-            AdController.show().then((result) => {
-                // هذي الدالة تتنفذ من يكمل المستخدم مشاهدة الإعلان للآخر (Rewarded)
-                
-                // نخفي الزر ونغير النص
-                btn.style.display = 'none';
-                statusText.textContent = "✅ شكراً لك!";
-                loadingText.style.display = 'block';
-
-                // نرسل الفيديو للمستخدم عبر تليكرام
-                sendVideoToTelegram();
-
-            }).catch((error) => {
-                // إذا المستخدم سد الإعلان قبل لا يخلص، أو صار خطأ
-                alert("لم تكتمل المشاهدة أو حدث خطأ. حاول مرة أخرى.");
+            btn.addEventListener('click', () => {
+                AdController.show().then((result) => {
+                    btn.style.display = 'none';
+                    statusText.textContent = "✅ شكراً لك!";
+                    loadingText.style.display = 'block';
+                    sendVideoToTelegram();
+                }).catch((error) => {
+                    alert("لم تكتمل المشاهدة أو حدث خطأ. حاول مرة أخرى.");
+                });
             });
-        });
+        }
 
         function sendVideoToTelegram() {
             if (videoUrl && chatId && token) {
