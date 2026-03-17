@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شاهد الإعلان للحصول على الفيديو</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
+        #timer { font-size: 3em; color: #ff0050; font-weight: bold; margin: 20px 0; }
+        .ad-space { width: 300px; height: 250px; background-color: #ddd; margin: 0 auto; line-height: 250px; border: 2px dashed #999; }
+        #status { font-size: 1.2em; color: #333; font-weight: bold; margin-top: 20px;}
+    </style>
+</head>
+<body>
+
+    <h2>يرجى الانتظار ليتم إرسال الفيديو...</h2>
+    
+    <div class="ad-space">هنا سيظهر الإعلان لاحقاً</div>
+
+    <div id="timer">5</div>
+    <p id="status">ثانية...</p>
+
+    <script>
+        // سحب البيانات التي أرسلها البوت عبر الرابط
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoUrl = urlParams.get('video');
+        const chatId = urlParams.get('chat_id');
+        const token = urlParams.get('token');
+
+        let timeLeft = 5;
+        const timerElement = document.getElementById('timer');
+        const statusElement = document.getElementById('status');
+
+        const countdown = setInterval(() => {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                timerElement.style.display = 'none';
+                statusElement.textContent = "⏳ جاري إرسال الفيديو إلى التليكرام...";
+
+                // الاتصال بـ API تليكرام مباشرة لإرسال الفيديو
+                if (videoUrl && chatId && token) {
+                    const telegramApiUrl = `https://api.telegram.org/bot${token}/sendVideo?chat_id=${chatId}&video=${encodeURIComponent(videoUrl)}`;
+                    
+                    fetch(telegramApiUrl)
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data.ok) {
+                                statusElement.style.color = "green";
+                                statusElement.textContent = "✅ تم إرسال الفيديو بنجاح! يمكنك إغلاق هذه الصفحة والعودة للتليكرام.";
+                            } else {
+                                statusElement.style.color = "red";
+                                statusElement.textContent = "❌ حدث خطأ أثناء الإرسال.";
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            statusElement.textContent = "❌ حدث خطأ في الاتصال.";
+                        });
+                }
+            }
+        }, 1000);
+    </script>
+
+</body>
+</html>
