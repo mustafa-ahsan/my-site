@@ -3,100 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحميل الفيديو</title>
+    <title>شاهد الإعلان للتحميل</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; padding: 20px;}
-        #status { font-size: 1.5em; color: #333; font-weight: bold; margin-bottom: 20px;}
-        #action-btn { 
-            padding: 15px 30px; font-size: 1.2em; color: white; 
-            background-color: #0088cc; border: none; border-radius: 8px; 
-            cursor: pointer; display: none; /* مخفي دائماً إلا إذا فشل التشغيل التلقائي */
-        }
-        #action-btn:hover { background-color: #0077b3; }
-        #message-box { color: #555; font-size: 1.2em; margin-top: 20px; line-height: 1.6; display: none;}
-        #loading { color: #ff0050; display: none; margin-top: 15px; font-size: 1.2em;}
+        body { font-family: Tahoma, sans-serif; text-align: center; padding: 40px 20px; background-color: #121212; color: white; }
+        .btn { padding: 15px 30px; font-size: 18px; font-weight: bold; background-color: #0088cc; color: white; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-top: 20px;}
+        .btn:active { background-color: #006699; }
+        #status { margin-top: 25px; font-size: 16px; color: #ffcc00; }
     </style>
 </head>
 <body>
-
-    <div id="status">جاري التحقق...</div>
-    <button id="action-btn">اضغط هنا لتشغيل الإعلان 📥</button>
-    <div id="message-box"></div>
-    <div id="loading">⏳ جاري إرسال الفيديو إلى تليكرام...</div>
+    <h2>جاري تحضير الفيديو الخاص بك 🎥</h2>
+    <p>يرجى مشاهدة إعلان قصير لدعم البوت والاستمرار في تقديم الخدمة مجاناً.</p>
+    
+    <button id="showAdBtn" class="btn">شاهد الإعلان الآن 🎬</button>
+    <p id="status"></p>
 
     <script>
+        // استخراج آيدي المستخدم من الرابط الذي سيرسله البوت
         const urlParams = new URLSearchParams(window.location.search);
-        const videoUrl = urlParams.get('video');
-        const chatId = urlParams.get('chat_id');
-        const token = urlParams.get('token');
+        const userId = urlParams.get('userid');
 
-        const btn = document.getElementById('action-btn');
-        const statusText = document.getElementById('status');
-        const msgBox = document.getElementById('message-box');
-        const loadingText = document.getElementById('loading');
+        // تهيئة إعلان AdsGram باستخدام الـ Block ID الخاص بك
+        const AdController = window.Adsgram.init({ blockId: "int-25342" });
 
-        // التحقق من وجود الروابط (لخداع المراجع أو استقبال المستخدم)
-        if (!videoUrl || !chatId) {
-            // حالة المراجع أو الدخول المباشر للرابط
-            statusText.textContent = "مرحباً بك في أداة تحميل تيك توك!";
-            msgBox.textContent = "الرجاء العودة إلى محادثة البوت وإرسال رابط فيديو تيك توك أولاً، وسنقوم بتجهيزه لك فوراً.";
-            msgBox.style.display = 'block';
-        } else {
-            // حالة المستخدم الحقيقي
-            statusText.textContent = "⏳ جاري تشغيل الإعلان تلقائياً...";
+        document.getElementById('showAdBtn').addEventListener('click', () => {
+            document.getElementById('status').innerText = "جاري تحميل الإعلان، يرجى الانتظار...";
             
-            // استخدام الـ ID الجديد مالتك
-            const AdController = window.Adsgram.init({ blockId: "25342" });
-
-            // محاولة التشغيل التلقائي فوراً بدون نقرة
             AdController.show().then((result) => {
-                // نجح التشغيل التلقائي وكمل الإعلان
-                statusText.textContent = "✅ شكراً لك!";
-                loadingText.style.display = 'block';
-                sendVideoToTelegram();
-            }).catch((error) => {
-                // متصفح الهاتف منع التشغيل التلقائي، نظهر الزر كبديل
-                console.log("Autoplay blocked, showing button instead.");
-                statusText.textContent = "الرجاء الضغط على الزر أدناه لمشاهدة الإعلان وإكمال التحميل";
-                btn.style.display = 'inline-block';
+                // إذا أكمل المستخدم مشاهدة الإعلان بنجاح
+                document.getElementById('status').innerText = "✅ شكراً لك! جاري إرسال الفيديو في التيليجرام...";
+
+                // إرسال إشارة إلى سيرفر Replit الخاص بك ليقوم بإرسال الفيديو
+                // ⚠️ مهم جداً: استبدل الرابط أدناه برابط Replit الخاص بك
+                const replitUrl = "https://اسم-مشروعك.اسم-حسابك.repl.co/adsgram_callback?userid=" + userId;
                 
-                // تفعيل الزر في حال احتاجه المستخدم
-                btn.addEventListener('click', () => {
-                    AdController.show().then((result) => {
-                        btn.style.display = 'none';
-                        statusText.textContent = "✅ شكراً لك!";
-                        loadingText.style.display = 'block';
-                        sendVideoToTelegram();
-                    }).catch((err) => {
-                        alert("لم تكتمل المشاهدة أو حدث خطأ. حاول مرة أخرى.");
-                    });
+                fetch(replitUrl).then(() => {
+                    // إغلاق الشاشة المصغرة تلقائياً والعودة للبوت
+                    setTimeout(() => { Telegram.WebApp.close(); }, 2000);
+                }).catch(e => {
+                    document.getElementById('status').innerText = "حدث خطأ بالاتصال بالسيرفر، راسل المطور.";
                 });
+
+            }).catch((result) => {
+                // إذا قام بإغلاق الإعلان قبل أن يكتمل
+                document.getElementById('status').innerText = "❌ لم تكتمل مشاهدة الإعلان، لن يتم إرسال الفيديو.";
             });
-        }
-
-        function sendVideoToTelegram() {
-            if (videoUrl && chatId && token) {
-                const telegramApiUrl = `https://api.telegram.org/bot${token}/sendVideo?chat_id=${chatId}&video=${encodeURIComponent(videoUrl)}`;
-                
-                fetch(telegramApiUrl)
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.ok) {
-                            loadingText.style.color = "green";
-                            loadingText.textContent = "✅ تم الإرسال بنجاح! يمكنك إغلاق هذه الصفحة والعودة للبوت.";
-                        } else {
-                            loadingText.style.color = "red";
-                            loadingText.textContent = "❌ حدث خطأ أثناء الإرسال.";
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        loadingText.textContent = "❌ حدث خطأ في الاتصال.";
-                    });
-            }
-        }
+        });
     </script>
-
 </body>
 </html>
