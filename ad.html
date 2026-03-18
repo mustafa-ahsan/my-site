@@ -21,33 +21,43 @@
     <p id="status"></p>
 
     <script>
-        // استخراج آيدي المستخدم من الرابط الذي سيرسله البوت
+        // 1. استخراج آيدي المستخدم
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('userid');
 
-        // تهيئة إعلان AdsGram باستخدام الـ Block ID الخاص بك
+        // 2. تفعيل إعلان AdsGram باستخدام الـ Block ID مالتك
         const AdController = window.Adsgram.init({ blockId: "int-25342" });
 
         document.getElementById('showAdBtn').addEventListener('click', () => {
             document.getElementById('status').innerText = "جاري تحميل الإعلان، يرجى الانتظار...";
             
             AdController.show().then((result) => {
-                // إذا أكمل المستخدم مشاهدة الإعلان بنجاح
+                // المستخدم كمل الإعلان
                 document.getElementById('status').innerText = "✅ شكراً لك! جاري إرسال الفيديو في التيليجرام...";
 
-                // إرسال إشارة إلى سيرفر Replit الخاص بك ليقوم بإرسال الفيديو
-                // ⚠️ مهم جداً: استبدل الرابط أدناه برابط Replit الخاص بك
-                const replitUrl = "https://اسم-مشروعك.اسم-حسابك.repl.co/adsgram_callback?userid=" + userId;
+                // 3. الاتصال بسيرفر Replit الخاص بك (رابطك المخفي)
+                // وضعت لك رابطك المباشر بناءً على اسم مشروعك وحسابك
+                const replitUrl = "https://my-site.apkapkmustafa2.repl.co/adsgram_callback?userid=" + userId;
                 
-                fetch(replitUrl).then(() => {
-                    // إغلاق الشاشة المصغرة تلقائياً والعودة للبوت
-                    setTimeout(() => { Telegram.WebApp.close(); }, 2000);
-                }).catch(e => {
-                    document.getElementById('status').innerText = "حدث خطأ بالاتصال بالسيرفر، راسل المطور.";
-                });
+                // إضافة محاولة ثانية بالرابط الجديد الخاص بـ Replit في حال فشل الأول
+                const backupReplitUrl = "https://my-site-apkapkmustafa2.replit.app/adsgram_callback?userid=" + userId;
+
+                fetch(replitUrl)
+                    .then(response => {
+                        if(!response.ok) throw new Error("Fallback");
+                        setTimeout(() => { Telegram.WebApp.close(); }, 2000);
+                    })
+                    .catch(e => {
+                        // إذا فشل الرابط الأول، يجرب الرابط الاحتياطي
+                        fetch(backupReplitUrl).then(() => {
+                            setTimeout(() => { Telegram.WebApp.close(); }, 2000);
+                        }).catch(err => {
+                            document.getElementById('status').innerText = "تمت المشاهدة، يرجى العودة للبوت والتحقق.";
+                        });
+                    });
 
             }).catch((result) => {
-                // إذا قام بإغلاق الإعلان قبل أن يكتمل
+                // إذا سد الإعلان قبل ما يكمل
                 document.getElementById('status').innerText = "❌ لم تكتمل مشاهدة الإعلان، لن يتم إرسال الفيديو.";
             });
         });
