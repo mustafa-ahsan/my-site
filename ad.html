@@ -3,87 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جاري عرض الإعلان</title>
+    <title>جاري عرض الإعلانات</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: Tahoma, sans-serif; text-align: center; padding: 40px 20px; background-color: #121212; color: white; }
-        #status { margin-top: 25px; font-size: 18px; color: #ffcc00; font-weight: bold; }
-        .spinner { margin: 20px auto; width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #ffcc00; animation: spin 1s ease-in-out infinite; }
+        body { 
+            font-family: Tahoma, sans-serif; 
+            text-align: center; 
+            padding: 15px 10px; 
+            background-color: #121212; 
+            color: white; 
+            margin: 0;
+        }
+        #status { margin-top: 10px; font-size: 16px; color: #ffcc00; font-weight: bold; }
+        .spinner { margin: 5px auto 15px auto; width: 30px; height: 30px; border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #ffcc00; animation: spin 1s ease-in-out infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* تنسيق لترتيب الإعلانات بشكل عمودي وأنيق */
+        .ads-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* المسافة بين كل إعلان والثاني */
+            align-items: center;
+            margin-top: 20px;
+            padding-bottom: 30px;
+        }
+        .ad-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
-    <h2>جاري تحضير الفيديو الخاص بك 🎥</h2>
     <div class="spinner" id="loading-spinner"></div>
-    <p id="status">جاري التحقق من الإعلانات، يرجى الانتظار لثوانٍ معدودة...</p>
+    <p id="status">جاري التحقق، يرجى الانتظار (5 ثوانٍ)...</p>
     
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token'); 
 
-        // تشغيل مؤقت زمني (5 ثوانٍ) بمجرد فتح الصفحة لضمان احتساب أرباح A-ADS
         window.onload = () => {
+            // توسيع نافذة تيليجرام لتأخذ الشاشة كاملة وتتسع للإعلانات
+            Telegram.WebApp.expand();
+
+            // مؤقت 5 ثوانٍ قبل العودة للبوت
             setTimeout(() => {
-                // إخفاء التحميل وإظهار رسالة النجاح
                 document.getElementById('loading-spinner').style.display = 'none';
-                document.getElementById('status').innerText = "✅ تمت المشاهدة! جاري تحويلك للبوت...";
+                document.getElementById('status').innerText = "✅ تمت المشاهدة! جاري تحويلك...";
 
                 const botUsername = "mustafaSaveFileBot"; 
-                
-                // تحويل المستخدم للبوت
                 const telegramLink = `https://t.me/${botUsername}?start=${token}`;
                 window.location.href = telegramLink;
                 
-                // إغلاق نافذة تطبيق تيليجرام المصغر
                 setTimeout(() => { Telegram.WebApp.close(); }, 500);
-            }, 5000); // 5000 مللي ثانية = 5 ثوانٍ (يمكنك تغييرها إذا أردت)
+            }, 5000); 
         };
     </script>
 
-    <div style="position: absolute; z-index: 99999">
-      <input autocomplete="off" type="checkbox" id="aadsstickymmvpukly" hidden />
-      <div style="padding-top: auto; padding-bottom: 0;">
-        <div style="width:100%;height:auto;position:fixed;text-align:center;font-size:0;top:0;left:0;right:0;margin:auto">
-          <label for="aadsstickymmvpukly" style="top: 50%;transform: translateY(-50%);right:24px;; position: absolute;border-radius: 4px; background: rgba(248, 248, 249, 0.70); padding: 4px;z-index: 99999;cursor:pointer">
-            <svg fill="#000000" height="16px" width="16px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 490 490">
-              <polygon points="456.851,0 245,212.564 33.149,0 0.708,32.337 212.669,245.004 0.708,457.678 33.149,490 245,277.443 456.851,490 489.292,457.678 277.331,245.004 489.292,32.337 "/>
-            </svg>
-          </label>
-          <div id="frame" style="width: 100%;margin: auto;position: relative; z-index: 99998;"><iframe data-aa=2430866 src=//acceptable.a-ads.com/2430866/?size=Adaptive style='border:0; padding:0; width:70%; height:auto; overflow:hidden; margin: auto'></iframe></div>
+    <div class="ads-container">
+        
+        <div class="ad-wrapper">
+            <iframe data-aa='2430866' src='//acceptable.a-ads.com/2430866/?size=Adaptive' style='border:0; padding:0; width:90%; max-width:320px; height:70px; overflow:hidden; display:block; margin:auto; border-radius: 8px;'></iframe>
         </div>
-        <style>
-      #aadsstickymmvpukly:checked + div {
-        display: none;
-      }
-        </style>
-      </div>
-    </div>
-    <div style="position: absolute; z-index: 99999">
-      <input autocomplete="off" type="checkbox" id="aadsstickymmvvukx1" hidden />
-      <div style="padding-top: 0; padding-bottom: auto;">
-        <div style="width:100%;height:auto;position:fixed;text-align:center;font-size:0;bottom:0;left:0;right:0;margin:auto">
-          <label for="aadsstickymmvvukx1" style="top: 50%;transform: translateY(-50%);right:24px;; position: absolute;border-radius: 4px; background: rgba(248, 248, 249, 0.70); padding: 4px;z-index: 99999;cursor:pointer">
-            <svg fill="#000000" height="16px" width="16px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 490 490">
-              <polygon points="456.851,0 245,212.564 33.149,0 0.708,32.337 212.669,245.004 0.708,457.678 33.149,490 245,277.443 456.851,490 489.292,457.678 277.331,245.004 489.292,32.337 "/>
-            </svg>
-          </label>
-          <div id="frame" style="width: 100%;margin: auto;position: relative; z-index: 99998;"><iframe data-aa=2430882 src=//acceptable.a-ads.com/2430882/?size=Adaptive style='border:0; padding:0; width:70%; height:auto; overflow:hidden; margin: auto'></iframe></div>
+        <div class="ad-wrapper">
+            <iframe data-aa='2430882' src='//acceptable.a-ads.com/2430882/?size=Adaptive' style='border:0; padding:0; width:90%; max-width:320px; height:70px; overflow:hidden; display:block; margin:auto; border-radius: 8px;'></iframe>
         </div>
-        <style>
-      #aadsstickymmvvukx1:checked + div {
-        display: none;
-      }
-        </style>
-      </div>
-    </div>
-
-    <!-- BEGIN AADS AD UNIT 2430883 -->
-
-<div id="frame" style="width: 100%;margin: auto;position: relative; z-index: 99998;">
-          <iframe data-aa='2430883' src='//acceptable.a-ads.com/2430883/?size=Adaptive'
-                            style='border:0; padding:0; width:70%; height:auto; overflow:hidden;display: block;margin: auto'></iframe>
+        <div class="ad-wrapper">
+            <iframe data-aa='2430883' src='//acceptable.a-ads.com/2430883/?size=Adaptive' style='border:0; padding:0; width:90%; max-width:320px; height:70px; overflow:hidden; display:block; margin:auto; border-radius: 8px;'></iframe>
+        </div>
         </div>
 
-<!-- END AADS AD UNIT 2430883 -->
-    </body>
+</body>
 </html>
