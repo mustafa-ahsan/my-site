@@ -3,50 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شاهد الإعلان للتحميل</title>
+    <title>جاري عرض الإعلان</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <style>
         body { font-family: Tahoma, sans-serif; text-align: center; padding: 40px 20px; background-color: #121212; color: white; }
-        .btn { padding: 15px 30px; font-size: 18px; font-weight: bold; background-color: #0088cc; color: white; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-top: 20px;}
-        .btn:active { background-color: #006699; }
-        #status { margin-top: 25px; font-size: 16px; color: #ffcc00; }
+        #status { margin-top: 25px; font-size: 18px; color: #ffcc00; font-weight: bold; }
+        .spinner { margin: 20px auto; width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #ffcc00; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <h2>جاري تحضير الفيديو الخاص بك 🎥</h2>
-    <p>يرجى مشاهدة إعلان قصير لدعم البوت والاستمرار في تقديم الخدمة مجاناً.</p>
+    <div class="spinner" id="loading-spinner"></div>
+    <p id="status">جاري تشغيل الإعلان تلقائياً، يرجى الانتظار...</p>
     
-    <button id="showAdBtn" class="btn">شاهد الإعلان الآن 🎬</button>
-    <p id="status"></p>
-
     <script>
-        // استلام الكود السري الخاص بالمستخدم
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token'); 
 
         const AdController = window.Adsgram.init({ blockId: "int-25342" });
 
-        document.getElementById('showAdBtn').addEventListener('click', () => {
-            document.getElementById('status').innerText = "جاري تحميل الإعلان، يرجى الانتظار...";
-            
+        // تشغيل الإعلان تلقائياً بمجرد فتح الصفحة
+        window.onload = () => {
             AdController.show().then((result) => {
+                // إخفاء التحميل وإظهار رسالة النجاح
+                document.getElementById('loading-spinner').style.display = 'none';
                 document.getElementById('status').innerText = "✅ تمت المشاهدة! جاري تحويلك للبوت...";
 
-                // ⚠️ مهم جداً: استبدل YOUR_BOT_USERNAME بيوزر البوت مالتك (مثال: DownloadShortsBot)
-                const botUsername = "mustafaSaveFileBot"; 
+                // ⚠️ مهم جداً: استبدل YOUR_BOT_USERNAME بيوزر البوت مالتك بدون @
+                const botUsername = "YOUR_BOT_USERNAME"; 
                 
-                // إعادة المستخدم للبوت مع الكود السري ليقوم البوت بإرسال الفيديو
                 const telegramLink = `https://t.me/${botUsername}?start=${token}`;
                 window.location.href = telegramLink;
                 
-                // إغلاق النافذة
                 setTimeout(() => { Telegram.WebApp.close(); }, 500);
 
             }).catch((result) => {
-                document.getElementById('status').innerText = "❌ لم تكتمل مشاهدة الإعلان، يرجى المحاولة مرة أخرى.";
+                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('status').innerText = "❌ حدث خطأ أو قمت بإغلاق الإعلان قبل اكتماله.";
             });
-        });
+        };
     </script>
 </body>
 </html>
