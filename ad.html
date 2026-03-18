@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>جاري عرض الإعلان</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <style>
         body { font-family: Tahoma, sans-serif; text-align: center; padding: 40px 20px; background-color: #121212; color: white; }
         #status { margin-top: 25px; font-size: 18px; color: #ffcc00; font-weight: bold; }
@@ -16,39 +15,32 @@
 <body>
     <h2>جاري تحضير الفيديو الخاص بك 🎥</h2>
     <div class="spinner" id="loading-spinner"></div>
-    <p id="status">جاري تشغيل الإعلان تلقائياً، يرجى الانتظار...</p>
+    <p id="status">جاري التحقق من الإعلانات، يرجى الانتظار لثوانٍ معدودة...</p>
     
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token'); 
 
-        const AdController = window.Adsgram.init({ blockId: "int-25346" });
-
-        // تشغيل الإعلان تلقائياً بمجرد فتح الصفحة
+        // تشغيل مؤقت زمني (5 ثوانٍ) بمجرد فتح الصفحة لضمان احتساب أرباح A-ADS
         window.onload = () => {
-            AdController.show().then((result) => {
+            setTimeout(() => {
                 // إخفاء التحميل وإظهار رسالة النجاح
                 document.getElementById('loading-spinner').style.display = 'none';
                 document.getElementById('status').innerText = "✅ تمت المشاهدة! جاري تحويلك للبوت...";
 
-                // ⚠️ مهم جداً: استبدل YOUR_BOT_USERNAME بيوزر البوت مالتك بدون @
                 const botUsername = "mustafaSaveFileBot"; 
                 
+                // تحويل المستخدم للبوت
                 const telegramLink = `https://t.me/${botUsername}?start=${token}`;
                 window.location.href = telegramLink;
                 
+                // إغلاق نافذة تطبيق تيليجرام المصغر
                 setTimeout(() => { Telegram.WebApp.close(); }, 500);
-
-            }).catch((result) => {
-                document.getElementById('loading-spinner').style.display = 'none';
-                document.getElementById('status').innerText = "❌ حدث خطأ أو قمت بإغلاق الإعلان قبل اكتماله.";
-            });
+            }, 5000); // 5000 مللي ثانية = 5 ثوانٍ (يمكنك تغييرها إذا أردت)
         };
     </script>
 
-    <!-- BEGIN AADS AD UNIT 2430866 -->
-
-<div style="position: absolute; z-index: 99999">
+    <div style="position: absolute; z-index: 99999">
       <input autocomplete="off" type="checkbox" id="aadsstickymmvpukly" hidden />
       <div style="padding-top: auto; padding-bottom: 0;">
         <div style="width:100%;height:auto;position:fixed;text-align:center;font-size:0;top:0;left:0;right:0;margin:auto">
@@ -63,12 +55,10 @@
       #aadsstickymmvpukly:checked + div {
         display: none;
       }
-    </style>
-    </div></div>
-
-    <!-- BEGIN AADS AD UNIT 2430882 -->
-
-<div style="position: absolute; z-index: 99999">
+        </style>
+      </div>
+    </div>
+    <div style="position: absolute; z-index: 99999">
       <input autocomplete="off" type="checkbox" id="aadsstickymmvvukx1" hidden />
       <div style="padding-top: 0; padding-bottom: auto;">
         <div style="width:100%;height:auto;position:fixed;text-align:center;font-size:0;bottom:0;left:0;right:0;margin:auto">
@@ -83,11 +73,8 @@
       #aadsstickymmvvukx1:checked + div {
         display: none;
       }
-    </style>
-    </div></div>
-
-<!-- END AADS AD UNIT 2430882 -->
-
-<!-- END AADS AD UNIT 2430866 -->
-</body>
+        </style>
+      </div>
+    </div>
+    </body>
 </html>
