@@ -21,44 +21,30 @@
     <p id="status"></p>
 
     <script>
-        // 1. استخراج آيدي المستخدم
+        // استلام الكود السري الخاص بالمستخدم
         const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('userid');
+        const token = urlParams.get('token'); 
 
-        // 2. تفعيل إعلان AdsGram باستخدام الـ Block ID مالتك
         const AdController = window.Adsgram.init({ blockId: "int-25342" });
 
         document.getElementById('showAdBtn').addEventListener('click', () => {
             document.getElementById('status').innerText = "جاري تحميل الإعلان، يرجى الانتظار...";
             
             AdController.show().then((result) => {
-                // المستخدم كمل الإعلان
-                document.getElementById('status').innerText = "✅ شكراً لك! جاري إرسال الفيديو في التيليجرام...";
+                document.getElementById('status').innerText = "✅ تمت المشاهدة! جاري تحويلك للبوت...";
 
-                // 3. الاتصال بسيرفر Replit الخاص بك (رابطك المخفي)
-                // وضعت لك رابطك المباشر بناءً على اسم مشروعك وحسابك
-                const replitUrl = "https://my-site.apkapkmustafa2.repl.co/adsgram_callback?userid=" + userId;
+                // ⚠️ مهم جداً: استبدل YOUR_BOT_USERNAME بيوزر البوت مالتك (مثال: DownloadShortsBot)
+                const botUsername = "mustafaSaveFileBot"; 
                 
-                // إضافة محاولة ثانية بالرابط الجديد الخاص بـ Replit في حال فشل الأول
-                const backupReplitUrl = "https://my-site-apkapkmustafa2.replit.app/adsgram_callback?userid=" + userId;
-
-                fetch(replitUrl)
-                    .then(response => {
-                        if(!response.ok) throw new Error("Fallback");
-                        setTimeout(() => { Telegram.WebApp.close(); }, 2000);
-                    })
-                    .catch(e => {
-                        // إذا فشل الرابط الأول، يجرب الرابط الاحتياطي
-                        fetch(backupReplitUrl).then(() => {
-                            setTimeout(() => { Telegram.WebApp.close(); }, 2000);
-                        }).catch(err => {
-                            document.getElementById('status').innerText = "تمت المشاهدة، يرجى العودة للبوت والتحقق.";
-                        });
-                    });
+                // إعادة المستخدم للبوت مع الكود السري ليقوم البوت بإرسال الفيديو
+                const telegramLink = `https://t.me/${botUsername}?start=${token}`;
+                window.location.href = telegramLink;
+                
+                // إغلاق النافذة
+                setTimeout(() => { Telegram.WebApp.close(); }, 500);
 
             }).catch((result) => {
-                // إذا سد الإعلان قبل ما يكمل
-                document.getElementById('status').innerText = "❌ لم تكتمل مشاهدة الإعلان، لن يتم إرسال الفيديو.";
+                document.getElementById('status').innerText = "❌ لم تكتمل مشاهدة الإعلان، يرجى المحاولة مرة أخرى.";
             });
         });
     </script>
