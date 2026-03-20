@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير العيد الإشعاعي - قسم الأشعة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: #00d2ff;
+            --accent-gold: #ffd700;
+            --bg-dark: #050a10;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 210, 255, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(230, 126, 34, 0.1) 0%, transparent 40%);
+            color: #fff;
+            font-family: 'Tajawal', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* خلفية شبكية تقنية */
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(0, 210, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 210, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
+        }
+
+        .container {
+            position: relative;
+            width: 90%;
+            max-width: 480px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 50px 30px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            overflow: hidden;
+        }
+
+        /* تأثير المسح الضوئي المستمر للخلفية */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(transparent, rgba(0, 210, 255, 0.1), transparent 30%);
+            animation: rotate 10s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* العناصر العائمة */
+        .floating-lantern {
+            position: absolute;
+            font-size: 2rem;
+            filter: drop-shadow(0 0 10px var(--accent-gold));
+            animation: float 4s ease-in-out infinite alternate;
+        }
+        .l1 { top: 20px; right: 20px; }
+        .l2 { bottom: 20px; left: 20px; animation-delay: 1s; }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(-10deg); }
+            100% { transform: translateY(-15px) rotate(10deg); }
+        }
+
+        h2 { color: var(--primary-glow); font-weight: 900; margin-bottom: 10px; }
+        p { color: #ccc; font-weight: 300; line-height: 1.6; }
+
+        /* زر الفحص الاحترافي */
+        .scan-btn {
+            position: relative;
+            background: transparent;
+            border: 2px solid var(--primary-glow);
+            color: var(--primary-glow);
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: 0.3s;
+            margin-top: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .scan-btn:hover {
+            background: var(--primary-glow);
+            color: #000;
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        /* جهاز السونار/الرنين */
+        .scanner-box {
+            display: none;
+            margin: 30px auto;
+            width: 180px;
+            height: 180px;
+            border: 4px solid var(--glass);
+            border-top-color: var(--primary-glow);
+            border-radius: 50%;
+            position: relative;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .scan-internal {
+            position: absolute;
+            top: 15px; left: 15px; right: 15px; bottom: 15px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="%2300d2ff" stroke-width="0.5" fill="none" opacity="0.3"/></svg>');
+            background-size: cover;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: pulse 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        #status-text {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--primary-glow);
+            margin-top: 10px;
+            height: 20px;
+        }
+
+        /* النتائج النهائية */
+        #step2 { display: none; }
+        
+        .result-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 25px;
+            border-right: 4px solid var(--accent-gold);
+            text-align: right;
+            margin-top: 20px;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .highlight { color: var(--accent-gold); font-weight: 700; }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            border-top: 1px solid var(--glass);
+            padding-top: 15px;
+        }
+
+        .sender-name {
+            font-size: 1.5rem;
+            background: linear-gradient(to left, var(--accent-gold), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+        }
+
+        /* جسيمات الاحتفال */
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--primary-glow);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* الصور المتساقطة */
+        .kadim-face {
+            position: fixed;
+            top: -100px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 15px var(--accent-gold);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        @keyframes fallKadim {
+            0% { transform: translateY(0) rotate(-20deg) scale(1); opacity: 1; }
+            50% { transform: translateY(50vh) rotate(20deg) scale(1.2); }
+            100% { transform: translateY(110vh) rotate(-20deg) scale(1); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ملف الصوت المخفي -->
+    <audio id="bg-music" loop>
+        <source src="https://audio.nghmat.com/mp3_songs_Jiou73/kazim-alsahir/Nghmat.Com_Kazem.Elsaher_Eid.Wa.Hob.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="grid-bg"></div>
+
+    <div class="container">
+        <div class="floating-lantern l1">🌙</div>
+        <div class="floating-lantern l2">✨</div>
+
+        <!-- الخطوة الأولى -->
+        <div id="step1">
+            <div style="font-size: 4rem; margin-bottom: 20px;">☢️</div>
+            <h2>قسم الأشعة يرحب بكم</h2>
+            <p>نظام الفحص جاهز لاستخراج تقرير "فرحة العيد".. يرجى بدء المسح الضوئي للقلب والروح.</p>
+            <button class="scan-btn" onclick="startScan()">تشغيل الجهاز ⚡</button>
+        </div>
+
+        <!-- الخطوة الثانية: المحاكاة -->
+        <div id="loading-zone" style="display: none;">
+            <div class="scanner-box">
+                <div class="scan-internal">
+                    <span style="font-size: 3rem; transform: rotate(-360deg) !important;">🩻</span>
+                </div>
+            </div>
+            <div id="status-text">جاري معايرة الحزمة الإشعاعية...</div>
+        </div>
+
+        <!-- الخطوة الثالثة: التهنئة -->
+        <div id="step2">
+            <h1 style="color: var(--accent-gold); font-size: 2.2rem; margin-bottom: 5px;">عيد فطر سعيد</h1>
+            <p style="font-size: 1rem;">إلى جنود الظل ومصوري الابتسامات العميقة</p>
+            
+            <div class="result-card">
+                <p>تم فحص القلوب ووجدناها: <span class="highlight">Full Quality</span></p>
+                <p>كل عام وأنتم بوضوح (Resolution) فائق، وحياة خالية من الـ <span class="highlight">Artifacts</span>، وأيام مليئة بالـ <span class="highlight">Contrast</span> الجميل!</p>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <p>تحياتي لكم،</p>
+                <div class="sender-name">مـصـطـفـى</div>
+            </div>
+
+            <div class="footer">
+                تم استخراج هذا التقرير بدقة 4K في أول أيام العيد
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // قائمة الصور المتساقطة
+        const fallingImages = [
+            'https://upload.wikimedia.org/wikipedia/commons/f/fb/Kazem_Main.jpg',
+            'https://mustafa-ahsan.github.io/my-site/Dzg-maiWkAI8-Fi.jpeg',
+            'https://mustafa-ahsan.github.io/my-site/Screenshot_2026-03-20_15-36-33.png',
+            'https://mustafa-ahsan.github.io/my-site/Screenshot_2026-03-20_15-40-44.png',
+            'https://mustafa-ahsan.github.io/my-site/Screenshot_2026-03-20_15-42-41.png',
+            'https://mustafa-ahsan.github.io/my-site/Screenshot_2026-03-20_15-47-29.png',
+            'https://mustafa-ahsan.github.io/my-site/Screenshot_2026-03-20_15-54-00.png'
+        ];
+
+        function startScan() {
+            // تشغيل الموسيقى عند بدء الفحص
+            const music = document.getElementById('bg-music');
+            music.play().catch(error => console.log("لا يمكن تشغيل الصوت تلقائياً:", error));
+
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('loading-zone').style.display = 'block';
+            
+            const statusText = document.getElementById('status-text');
+            const messages = [
+                "جاري ضبط التباين (Contrast)...",
+                "تحسين دقة المشاعر (Resolution)...",
+                "إزالة الضجيج (Denoising) من العام الماضي...",
+                "استخراج صورة العيد النهائية..."
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < messages.length) {
+                    statusText.innerText = messages[i];
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    showFinalResult();
+                }
+            }, 1000);
+        }
+
+        function showFinalResult() {
+            document.getElementById('loading-zone').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+            celebrate();
+        }
+
+        function celebrate() {
+            const colors = ['#00d2ff', '#ffd700', '#ffffff', '#e67e22'];
+            for (let i = 0; i < 60; i++) {
+                createConfetti(colors[Math.floor(Math.random() * colors.length)]);
+            }
+
+            // تشغيل أمطار الصور للدفعة الأولى
+            for(let i=0; i < 15; i++) {
+                setTimeout(createKadimRain, Math.random() * 4000); 
+            }
+            
+            // استمرار المطر بشكل دائم وبدون توقف
+            // تم زيادة الرقم إلى 700 لتقليل زحمة الصور قليلاً بما أنها أصبحت تسقط ببطء
+            setInterval(createKadimRain, 700);
+        }
+
+        function createKadimRain() {
+            const kadim = document.createElement('img');
+            
+            // اختيار صورة عشوائية من القائمة المحددة
+            const randomImage = fallingImages[Math.floor(Math.random() * fallingImages.length)];
+            kadim.src = randomImage;
+            
+            kadim.className = 'kadim-face';
+            
+            // عشوائية في الحجم والمكان
+            const size = 50 + Math.random() * 40;
+            kadim.style.width = size + 'px';
+            kadim.style.height = size + 'px';
+            kadim.style.left = Math.random() * 100 + 'vw';
+            
+            // تم تعديل المدة لتصبح أبطأ (بين 5 إلى 9 ثوانٍ بدلاً من 2.5 إلى 5.5 ثوانٍ)
+            const duration = 5000 + Math.random() * 4000;
+            kadim.style.animation = `fallKadim ${duration}ms linear forwards`;
+            
+            document.body.appendChild(kadim);
+            
+            // حذف الصورة بعد انتهاء الحركة لتخفيف العبء على المتصفح
+            setTimeout(() => kadim.remove(), duration);
+        }
+
+        function createConfetti(color) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.background = color;
+            confetti.style.left = '50%';
+            confetti.style.top = '40%';
+            
+            const destinationX = (Math.random() - 0.5) * 400;
+            const destinationY = (Math.random() - 0.5) * 400;
+            
+            document.body.appendChild(confetti);
+
+            const animation = confetti.animate([
+                { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                { transform: `translate(${destinationX}px, ${destinationY}px) scale(0)`, opacity: 0 }
+            ], {
+                duration: 1000 + Math.random() * 1000,
+                easing: 'cubic-bezier(0, .9, .57, 1)',
+                fill: 'forwards'
+            });
+
+            animation.onfinish = () => confetti.remove();
+        }
+    </script>
+</body>
+</html>
