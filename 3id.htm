@@ -261,7 +261,7 @@
             </div>
 
             <div class="footer">
-                تم استخراج هذا التقرير بدقة 4K في أول أيام العيد
+                 الفيزياء و الباثو كلها دور ثاني 
             </div>
         </div>
     </div>
@@ -318,14 +318,14 @@
                 createConfetti(colors[Math.floor(Math.random() * colors.length)]);
             }
 
-            // تشغيل أمطار الصور للدفعة الأولى
-            for(let i=0; i < 15; i++) {
+            // تقليل الدفعة الأولى من الصور إلى النصف (7 صور بدلاً من 15)
+            for(let i=0; i < 7; i++) {
                 setTimeout(createKadimRain, Math.random() * 4000); 
             }
             
-            // استمرار المطر بشكل دائم وبدون توقف
-            // تم زيادة الرقم إلى 700 لتقليل زحمة الصور قليلاً بما أنها أصبحت تسقط ببطء
-            setInterval(createKadimRain, 700);
+            // استمرار المطر بشكل دائم ولكن ببطء ونصف العدد
+            // تم زيادة الرقم إلى 1400 جزء من الثانية لينزل نصف العدد
+            setInterval(createKadimRain, 1400);
         }
 
         function createKadimRain() {
@@ -343,7 +343,7 @@
             kadim.style.height = size + 'px';
             kadim.style.left = Math.random() * 100 + 'vw';
             
-            // تم تعديل المدة لتصبح أبطأ (بين 5 إلى 9 ثوانٍ بدلاً من 2.5 إلى 5.5 ثوانٍ)
+            // المدة أبطأ (بين 5 إلى 9 ثوانٍ)
             const duration = 5000 + Math.random() * 4000;
             kadim.style.animation = `fallKadim ${duration}ms linear forwards`;
             
