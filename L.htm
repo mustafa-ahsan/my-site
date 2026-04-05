@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mustafa Ahsan | Links</title>
+    <!-- استدعاء خط Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- استدعاء أيقونات FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-glow: rgba(108, 92, 231, 0.4);
+            --secondary-glow: rgba(0, 206, 201, 0.4);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            /* خلفية متدرجة ومتحركة */
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e, #0f3460);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* حركة الخلفية */
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 20px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        /* حاوية الصورة مع تأثير التوهج */
+        .profile-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px auto;
+            border-radius: 50%;
+            animation: fadeInDown 1s ease;
+        }
+
+        .profile-container::before {
+            content: '';
+            position: absolute;
+            top: -5px; left: -5px; right: -5px; bottom: -5px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #6c5ce7, #00cec9);
+            z-index: -1;
+            filter: blur(15px);
+            opacity: 0.7;
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 0.9; transform: scale(1.05); }
+        }
+
+        .profile-pic {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            background-color: #111;
+        }
+
+        .name {
+            font-size: 26px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 2px;
+            /* نص بتدرج لوني */
+            background: linear-gradient(to right, #fff, #a8c0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeIn 1.2s ease;
+        }
+
+        .bio {
+            font-size: 15px;
+            color: #a0a0a0;
+            margin-top: 8px;
+            margin-bottom: 35px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            animation: fadeIn 1.5s ease;
+        }
+
+        .links-container {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        /* الأزرار بتأثير Glassmorphism */
+        .link-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 25px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #ffffff;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            /* انيميشن الظهور المتدرج للأزرار */
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUp 0.8s forwards;
+        }
+
+        /* تأخير ظهور كل زر بشكل متتالي */
+        .link-btn:nth-child(1) { animation-delay: 0.3s; }
+        .link-btn:nth-child(2) { animation-delay: 0.4s; }
+        .link-btn:nth-child(3) { animation-delay: 0.5s; }
+        .link-btn:nth-child(4) { animation-delay: 0.6s; }
+
+        .link-btn i {
+            position: absolute;
+            left: 25px;
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        /* تأثير حركي عند تمرير الماوس فوق الزر */
+        .link-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .link-btn:hover i {
+            color: #ffffff;
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        /* انيميشن الظهور */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* زخرفة خلفية إضافية (دوائر مضيئة) */
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        .shape1 {
+            top: -100px;
+            left: -100px;
+            width: 300px;
+            height: 300px;
+            background: #6c5ce7;
+        }
+
+        .shape2 {
+            bottom: -150px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: #00cec9;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- أشكال الخلفية المضيئة -->
+    <div class="bg-shape shape1"></div>
+    <div class="bg-shape shape2"></div>
+
+    <div class="container">
+        <div class="profile-container">
+            <!-- تمت إضافة صورة بديلة من Unsplash تظهر في حال لم تكن صورتك موجودة -->
+            <img src="profile.jpg" 
+                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530497610245-94d3c16cda28?q=80&w=300&auto=format&fit=crop'" 
+                 alt="Mustafa Ahsan" 
+                 class="profile-pic">
+        </div>
+
+        <h1 class="name">MUSTAFA AHSAN</h1>
+        <p class="bio">Radiology | Creator</p>
+
+        <div class="links-container">
+            <a href="https://tellonym.me/mc.ctf" target="_blank" class="link-btn">
+                <i class="fa-regular fa-envelope"></i>
+                Tellonym
+            </a>
+            
+            <a href="#" target="https://www.facebook.com/mustafa.ahsan.300" class="link-btn">
+                <i class="fa-brands fa-facebook"></i>
+                Facebook
+            </a>
+            
+            <a href="#" target="https://www.tiktok.com/@ctf_iq" class="link-btn">
+                <i class="fa-brands fa-tiktok"></i>
+                TikTok
+            </a>
+            
+            <a href="#" target="https://github.com/mustafa-ahsan" class="link-btn">
+                <i class="fa-brands fa-github"></i>
+                GitHub Profile
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
