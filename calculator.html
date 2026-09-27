@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خطة ميزانية العمل</title>
+    <style>
+        :root {
+            --bg-main: #131314;
+            --bg-card: #1e1f22;
+            --text-main: #e3e3e3;
+            --text-muted: #9aa0a6;
+            --accent-green: #5bb974;
+            --color-housing: #8ab4f8;
+            --color-food: #81c995;
+            --color-bike: #fde293;
+            --border-color: #3c4043;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background-color: var(--bg-main);
+        }
+
+        /* رأس الصفحة (الإحصائيات) */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-box.center {
+            border-right: 1px solid var(--border-color);
+            border-left: 1px solid var(--border-color);
+            padding: 0 2rem;
+        }
+
+        .stat-title {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .stat-value.surplus {
+            color: var(--accent-green);
+        }
+
+        .stat-value.ratio {
+            color: var(--accent-green);
+        }
+
+        /* الدخل الشهري */
+        .income-section {
+            margin-bottom: 2rem;
+        }
+
+        .income-section label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-group input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            width: 100%;
+            outline: none;
+        }
+
+        .input-group span {
+            color: var(--text-muted);
+            margin-right: 10px;
+        }
+
+        /* شريط التقدم المرئي */
+        .progress-title {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        .progress-bar-container {
+            height: 12px;
+            background-color: var(--bg-card);
+            border-radius: 6px;
+            display: flex;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .progress-segment {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        /* تفاصيل المصاريف */
+        .category {
+            margin-bottom: 1.5rem;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .category-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .category-stats {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .category-ratio {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .slider-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            padding-right: 18px;
+        }
+
+        .slider-item {
+            flex: 1;
+        }
+
+        .slider-label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type=range] {
+            flex: 1;
+            accent-color: var(--text-main);
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            font-size: 0.9rem;
+            min-width: 80px;
+            text-align: left;
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+        }
+
+        .footer-note {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-align: right;
+            margin-top: 2rem;
+            font-style: italic;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- الإحصائيات العلوية -->
+        <div class="header-stats">
+            <div class="stat-box">
+                <div class="stat-title">إجمالي المصاريف</div>
+                <div class="stat-value" id="total-expenses-display">0 د.ع</div>
+            </div>
+            <div class="stat-box center">
+                <div class="stat-title">الفائض الشهري الصافي (للقسط)</div>
+                <div class="stat-value surplus" id="surplus-display">0 د.ع</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">نسبة التوفير</div>
+                <div class="stat-value ratio" id="ratio-display">0%</div>
+            </div>
+        </div>
+
+        <!-- الدخل -->
+        <div class="income-section">
+            <label>الدخل الشهري (20 طلب يومياً)</label>
+            <div class="input-group">
+                <input type="text" id="income-input" value="750,000" oninput="formatIncomeInput(this)">
+                <span>د.ع</span>
+            </div>
+        </div>
+
+        <div class="progress-title">تفاصيل المصاريف</div>
+
+        <!-- شريط الألوان -->
+        <div class="progress-bar-container">
+            <div class="progress-segment" id="bar-housing" style="background-color: var(--color-housing); width: 0%;"></div>
+            <div class="progress-segment" id="bar-food" style="background-color: var(--color-food); width: 0%;"></div>
+            <div class="progress-segment" id="bar-bike" style="background-color: var(--color-bike); width: 0%;"></div>
+        </div>
+
+        <!-- قسم السكن والاتصالات -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <span class="dot" style="background-color: var(--color-housing);"></span>
+                    السكن والاتصالات
+                </div>
+                <div class="category-stats">
+                    <span class="category-ratio" id="ratio-housing">0%</span>
+                    <strong id="total-housing">0 د.ع</strong>
+                </div>
+            </div>
+            <div class="slider-group">
+                <div class="slider-item">
+                    <span class="slider-label">إيجار السكن</span>
+                    <div class="slider-control">
+                        <input type="range" id="rent" min="0" max="150000" step="5000" value="75000" oninput="updateCalculations()">
+                        <div class="slider-value"><span id="rent-val">75,000</span> د.ع</div>
+                    </div>
+                </div>
+                <div class="slider-item">
+                    <span class="slider-label">رصيد وإنترنت</span>
+                    <div class="slider-control">
+                        <input type="range" id="internet" min="0" max="50000" step="1000" value="35000" oninput="updateCalculations()">
+                        <div class="slider-value"><span id="internet-val">35,000</span> د.ع</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم المعيشة والأكل -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <span class="dot" style="background-color: var(--color-food);"></span>
+                    المعيشة والأكل
+                </div>
+                <div class="category-stats">
+                    <span class="category-ratio" id="ratio-food">0%</span>
+                    <strong id="total-food">0 د.ع</strong>
+                </div>
+            </div>
+            <div class="slider-group">
+                <div class="slider-item">
+                    <span class="slider-label">مصرف الأكل (9 آلاف يومياً)</span>
+                    <div class="slider-control">
+                        <input type="range" id="food" min="150000" max="400000" step="5000" value="270000" oninput="updateCalculations()">
+                        <div class="slider-value"><span id="food-val">270,000</span> د.ع</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم الدراجة والطوارئ -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <span class="dot" style="background-color: var(--color-bike);"></span>
+                    الدراجة والطوارئ
+                </div>
+                <div class="category-stats">
+                    <span class="category-ratio" id="ratio-bike">0%</span>
+                    <strong id="total-bike">0 د.ع</strong>
+                </div>
+            </div>
+            <div class="slider-group">
+                <div class="slider-item">
+                    <span class="slider-label">بنزين ودهن</span>
+                    <div class="slider-control">
+                        <input type="range" id="bike" min="25000" max="150000" step="5000" value="80000" oninput="updateCalculations()">
+                        <div class="slider-value"><span id="bike-val">80,000</span> د.ع</div>
+                    </div>
+                </div>
+                <div class="slider-item">
+                    <span class="slider-label">طوارئ (منا ومنا)</span>
+                    <div class="slider-control">
+                        <input type="range" id="misc" min="0" max="100000" step="5000" value="25000" oninput="updateCalculations()">
+                        <div class="slider-value"><span id="misc-val">25,000</span> د.ع</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            هذا الفائض سيجمع لك أكثر من 660 ألف دينار خلال شهرين ونصف، لتغطية القسط بالكامل.
+        </div>
+
+    </div>
+
+    <script>
+        // دالة لتنسيق الأرقام مع فواصل الآلاف
+        function formatNumber(num) {
+            return Number(num).toLocaleString('en-US');
+        }
+
+        // دالة لتهيئة حقل الدخل عند الكتابة فيه
+        function formatIncomeInput(input) {
+            let value = input.value.replace(/,/g, '').replace(/\D/g, '');
+            if(value === '') value = '0';
+            input.value = formatNumber(value);
+            updateCalculations();
+        }
+
+        // دالة الحسابات وتحديث الواجهة
+        function updateCalculations() {
+            // جلب القيم
+            let income = parseInt(document.getElementById('income-input').value.replace(/,/g, '')) || 0;
+            
+            let rent = parseInt(document.getElementById('rent').value);
+            let internet = parseInt(document.getElementById('internet').value);
+            let food = parseInt(document.getElementById('food').value);
+            let bike = parseInt(document.getElementById('bike').value);
+            let misc = parseInt(document.getElementById('misc').value);
+
+            // تحديث نصوص السلايدرات
+            document.getElementById('rent-val').innerText = formatNumber(rent);
+            document.getElementById('internet-val').innerText = formatNumber(internet);
+            document.getElementById('food-val').innerText = formatNumber(food);
+            document.getElementById('bike-val').innerText = formatNumber(bike);
+            document.getElementById('misc-val').innerText = formatNumber(misc);
+
+            // حساب المجاميع لكل فئة
+            let totalHousing = rent + internet;
+            let totalFood = food;
+            let totalBike = bike + misc;
+            let totalExpenses = totalHousing + totalFood + totalBike;
+            let surplus = income - totalExpenses;
+
+            // تحديث مجاميع الفئات
+            document.getElementById('total-housing').innerText = formatNumber(totalHousing) + ' د.ع';
+            document.getElementById('total-food').innerText = formatNumber(totalFood) + ' د.ع';
+            document.getElementById('total-bike').innerText = formatNumber(totalBike) + ' د.ع';
+
+            // تحديث الإحصائيات العلوية
+            document.getElementById('total-expenses-display').innerText = formatNumber(totalExpenses) + ' د.ع';
+            
+            let surplusDisplay = document.getElementById('surplus-display');
+            surplusDisplay.innerText = formatNumber(surplus) + ' د.ع';
+            surplusDisplay.style.color = surplus >= 0 ? 'var(--accent-green)' : '#e53935';
+
+            let ratio = income > 0 ? Math.round((surplus / income) * 100) : 0;
+            let ratioDisplay = document.getElementById('ratio-display');
+            ratioDisplay.innerText = ratio + '%';
+            ratioDisplay.style.color = ratio >= 0 ? 'var(--accent-green)' : '#e53935';
+
+            // حساب وتحديث نسب الفئات والشريط اللوني
+            if(income > 0) {
+                let housingRatio = (totalHousing / income) * 100;
+                let foodRatio = (totalFood / income) * 100;
+                let bikeRatio = (totalBike / income) * 100;
+
+                document.getElementById('ratio-housing').innerText = Math.round(housingRatio) + '%';
+                document.getElementById('ratio-food').innerText = Math.round(foodRatio) + '%';
+                document.getElementById('ratio-bike').innerText = Math.round(bikeRatio) + '%';
+
+                document.getElementById('bar-housing').style.width = housingRatio + '%';
+                document.getElementById('bar-food').style.width = foodRatio + '%';
+                document.getElementById('bar-bike').style.width = bikeRatio + '%';
+            } else {
+                document.getElementById('ratio-housing').innerText = '0%';
+                document.getElementById('ratio-food').innerText = '0%';
+                document.getElementById('ratio-bike').innerText = '0%';
+                
+                document.getElementById('bar-housing').style.width = '0%';
+                document.getElementById('bar-food').style.width = '0%';
+                document.getElementById('bar-bike').style.width = '0%';
+            }
+        }
+
+        // تشغيل الدالة أول مرة عند فتح الصفحة لضبط القيم المبدئية
+        window.onload = updateCalculations;
+    </script>
+</body>
+</html>
