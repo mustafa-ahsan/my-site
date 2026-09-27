@@ -79,36 +79,11 @@
 
         /* الدخل الشهري */
         .income-section {
-            margin-bottom: 2rem;
-        }
-
-        .income-section label {
-            display: block;
-            margin-bottom: 0.8rem;
-            font-size: 0.95rem;
-        }
-
-        .input-group {
+            margin-bottom: 2.5rem;
             background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 0.8rem 1rem;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-group input {
-            background: transparent;
-            border: none;
-            color: var(--text-main);
-            font-size: 1.1rem;
-            width: 100%;
-            outline: none;
-        }
-
-        .input-group span {
-            color: var(--text-muted);
-            margin-right: 10px;
         }
 
         /* شريط التقدم المرئي */
@@ -251,12 +226,24 @@
             </div>
         </div>
 
-        <!-- الدخل -->
+        <!-- قسم الدخل المتغير (عدد الطلبات) -->
         <div class="income-section">
-            <label>الدخل الشهري (20 طلب يومياً)</label>
-            <div class="input-group">
-                <input type="text" id="income-input" value="750,000" oninput="formatIncomeInput(this)">
-                <span>د.ع</span>
+            <div class="category-header" style="margin-bottom: 1.5rem;">
+                <div class="category-title" style="font-size: 1.1rem; font-weight: bold; color: var(--accent-green);">
+                    الدخل الشهري المتوقع (سعر الطلب 1,250 د.ع)
+                </div>
+                <div class="category-stats">
+                    <strong id="total-income-display" style="color: var(--accent-green); font-size: 1.2rem;">0 د.ع</strong>
+                </div>
+            </div>
+            <div class="slider-group" style="padding-right: 0;">
+                <div class="slider-item">
+                    <span class="slider-label">متوسط عدد الطلبات اليومية</span>
+                    <div class="slider-control">
+                        <input type="range" id="daily-orders" min="10" max="40" step="1" value="20" oninput="updateCalculations()">
+                        <div class="slider-value" style="color: var(--accent-green); font-weight: bold;"><span id="orders-val">20</span> طلب</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -364,19 +351,16 @@
             return Number(num).toLocaleString('en-US');
         }
 
-        // دالة لتهيئة حقل الدخل عند الكتابة فيه
-        function formatIncomeInput(input) {
-            let value = input.value.replace(/,/g, '').replace(/\D/g, '');
-            if(value === '') value = '0';
-            input.value = formatNumber(value);
-            updateCalculations();
-        }
-
         // دالة الحسابات وتحديث الواجهة
         function updateCalculations() {
-            // جلب القيم
-            let income = parseInt(document.getElementById('income-input').value.replace(/,/g, '')) || 0;
+            // جلب قيمة الطلبات اليومية وحساب الدخل
+            let dailyOrders = parseInt(document.getElementById('daily-orders').value);
+            let income = dailyOrders * 1250 * 30; // 1250 سعر الطلب في 30 يوم عمل
             
+            document.getElementById('orders-val').innerText = dailyOrders;
+            document.getElementById('total-income-display').innerText = formatNumber(income) + ' د.ع';
+
+            // جلب قيم المصاريف
             let rent = parseInt(document.getElementById('rent').value);
             let internet = parseInt(document.getElementById('internet').value);
             let food = parseInt(document.getElementById('food').value);
