@@ -189,7 +189,7 @@
 
         .slider-value {
             font-size: 0.9rem;
-            min-width: 80px;
+            min-width: 90px;
             text-align: left;
             background: transparent;
             border: none;
@@ -300,10 +300,10 @@
             </div>
             <div class="slider-group">
                 <div class="slider-item">
-                    <span class="slider-label">مصرف الأكل (9 آلاف يومياً)</span>
+                    <span class="slider-label">مصرف الأكل اليومي</span>
                     <div class="slider-control">
-                        <input type="range" id="food" min="150000" max="400000" step="5000" value="270000" oninput="updateCalculations()">
-                        <div class="slider-value"><span id="food-val">270,000</span> د.ع</div>
+                        <input type="range" id="daily-food" min="3000" max="25000" step="500" value="9000" oninput="updateCalculations()">
+                        <div class="slider-value"><span id="food-val">9,000</span> د.ع/يوم</div>
                     </div>
                 </div>
             </div>
@@ -323,7 +323,7 @@
             </div>
             <div class="slider-group">
                 <div class="slider-item">
-                    <span class="slider-label">بنزين ودهن</span>
+                    <span class="slider-label">بنزين ودهن (شهرياً)</span>
                     <div class="slider-control">
                         <input type="range" id="bike" min="25000" max="150000" step="5000" value="80000" oninput="updateCalculations()">
                         <div class="slider-value"><span id="bike-val">80,000</span> د.ع</div>
@@ -363,20 +363,22 @@
             // جلب قيم المصاريف
             let rent = parseInt(document.getElementById('rent').value);
             let internet = parseInt(document.getElementById('internet').value);
-            let food = parseInt(document.getElementById('food').value);
+            let dailyFood = parseInt(document.getElementById('daily-food').value);
             let bike = parseInt(document.getElementById('bike').value);
             let misc = parseInt(document.getElementById('misc').value);
+
+            // حساب المعيشة الشهري (المصرف اليومي × 30 يوم)
+            let totalFood = dailyFood * 30;
 
             // تحديث نصوص السلايدرات
             document.getElementById('rent-val').innerText = formatNumber(rent);
             document.getElementById('internet-val').innerText = formatNumber(internet);
-            document.getElementById('food-val').innerText = formatNumber(food);
+            document.getElementById('food-val').innerText = formatNumber(dailyFood);
             document.getElementById('bike-val').innerText = formatNumber(bike);
             document.getElementById('misc-val').innerText = formatNumber(misc);
 
             // حساب المجاميع لكل فئة
             let totalHousing = rent + internet;
-            let totalFood = food;
             let totalBike = bike + misc;
             let totalExpenses = totalHousing + totalFood + totalBike;
             let surplus = income - totalExpenses;
