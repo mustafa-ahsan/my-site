@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>خطة ميزانية العمل</title>
+    <title>خطة ميزانية العمل (الواقع الجديد)</title>
     <style>
         :root {
             --bg-main: #131314;
@@ -11,6 +11,7 @@
             --text-main: #e3e3e3;
             --text-muted: #9aa0a6;
             --accent-green: #5bb974;
+            --accent-red: #e53935;
             --color-housing: #8ab4f8;
             --color-food: #81c995;
             --color-bike: #fde293;
@@ -50,12 +51,13 @@
 
         .stat-box {
             text-align: center;
+            flex: 1;
         }
 
         .stat-box.center {
             border-right: 1px solid var(--border-color);
             border-left: 1px solid var(--border-color);
-            padding: 0 2rem;
+            padding: 0 1rem;
         }
 
         .stat-title {
@@ -67,14 +69,6 @@
         .stat-value {
             font-size: 1.5rem;
             font-weight: bold;
-        }
-
-        .stat-value.surplus {
-            color: var(--accent-green);
-        }
-
-        .stat-value.ratio {
-            color: var(--accent-green);
         }
 
         /* الدخل الشهري */
@@ -199,10 +193,14 @@
 
         .footer-note {
             color: var(--text-muted);
-            font-size: 0.8rem;
-            text-align: right;
+            font-size: 0.85rem;
+            text-align: center;
             margin-top: 2rem;
             font-style: italic;
+            background-color: rgba(229, 57, 53, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(229, 57, 53, 0.3);
         }
 
     </style>
@@ -217,37 +215,38 @@
                 <div class="stat-value" id="total-expenses-display">0 د.ع</div>
             </div>
             <div class="stat-box center">
-                <div class="stat-title">الفائض الشهري الصافي (للقسط)</div>
-                <div class="stat-value surplus" id="surplus-display">0 د.ع</div>
+                <div class="stat-title">الفائض الصافي (للقسط)</div>
+                <div class="stat-value" id="surplus-display">0 د.ع</div>
             </div>
             <div class="stat-box">
-                <div class="stat-title">نسبة التوفير</div>
-                <div class="stat-value ratio" id="ratio-display">0%</div>
+                <div class="stat-title">نسبة التوفير/العجز</div>
+                <div class="stat-value" id="ratio-display">0%</div>
             </div>
         </div>
 
         <!-- قسم الدخل المتغير (عدد الطلبات) -->
         <div class="income-section">
             <div class="category-header" style="margin-bottom: 1.5rem;">
-                <div class="category-title" style="font-size: 1.1rem; font-weight: bold; color: var(--accent-green);">
-                    الدخل الشهري المتوقع (سعر الطلب 1,250 د.ع)
+                <div class="category-title" style="font-size: 1.1rem; font-weight: bold; color: var(--text-main);">
+                    الدخل الشهري المتوقع (سعر الطلب 1,300 د.ع)
                 </div>
                 <div class="category-stats">
-                    <strong id="total-income-display" style="color: var(--accent-green); font-size: 1.2rem;">0 د.ع</strong>
+                    <strong id="total-income-display" style="font-size: 1.2rem;">0 د.ع</strong>
                 </div>
             </div>
             <div class="slider-group" style="padding-right: 0;">
                 <div class="slider-item">
-                    <span class="slider-label">متوسط عدد الطلبات اليومية</span>
+                    <span class="slider-label">متوسط عدد الطلبات اليومية (حرك المؤشر)</span>
                     <div class="slider-control">
-                        <input type="range" id="daily-orders" min="10" max="40" step="1" value="20" oninput="updateCalculations()">
-                        <div class="slider-value" style="color: var(--accent-green); font-weight: bold;"><span id="orders-val">20</span> طلب</div>
+                        <!-- التعديل هنا: الحد الأدنى 3، والافتراضي 7 بناءً على المعلومة الجديدة -->
+                        <input type="range" id="daily-orders" min="3" max="25" step="1" value="7" oninput="updateCalculations()">
+                        <div class="slider-value" style="font-weight: bold;"><span id="orders-val">7</span> طلبات</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="progress-title">تفاصيل المصاريف</div>
+        <div class="progress-title">تفاصيل المصاريف وتوزيعها</div>
 
         <!-- شريط الألوان -->
         <div class="progress-bar-container">
@@ -339,8 +338,8 @@
             </div>
         </div>
 
-        <div class="footer-note">
-            هذا الفائض سيجمع لك أكثر من 660 ألف دينار خلال شهرين ونصف، لتغطية القسط بالكامل.
+        <div class="footer-note" id="footer-message">
+            تنبيه: حرك مؤشر "عدد الطلبات اليومية" لليمين لمعرفة كم طلب تحتاج بالضبط لتغطية مصاريفك وبدء توفير القسط!
         </div>
 
     </div>
@@ -353,9 +352,9 @@
 
         // دالة الحسابات وتحديث الواجهة
         function updateCalculations() {
-            // جلب قيمة الطلبات اليومية وحساب الدخل
+            // جلب قيمة الطلبات اليومية وحساب الدخل (على أساس 1300 دينار للطلب)
             let dailyOrders = parseInt(document.getElementById('daily-orders').value);
-            let income = dailyOrders * 1250 * 30; // 1250 سعر الطلب في 30 يوم عمل
+            let income = dailyOrders * 1300 * 30; 
             
             document.getElementById('orders-val').innerText = dailyOrders;
             document.getElementById('total-income-display').innerText = formatNumber(income) + ' د.ع';
@@ -367,7 +366,7 @@
             let bike = parseInt(document.getElementById('bike').value);
             let misc = parseInt(document.getElementById('misc').value);
 
-            // حساب المعيشة الشهري (المصرف اليومي × 30 يوم)
+            // حساب المعيشة الشهري
             let totalFood = dailyFood * 30;
 
             // تحديث نصوص السلايدرات
@@ -393,26 +392,52 @@
             
             let surplusDisplay = document.getElementById('surplus-display');
             surplusDisplay.innerText = formatNumber(surplus) + ' د.ع';
-            surplusDisplay.style.color = surplus >= 0 ? 'var(--accent-green)' : '#e53935';
+            
+            // تلوين الفائض والنسبة بالأحمر في حالة الخسارة، وبالأخضر في حالة الربح
+            let colorStatus = surplus >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            surplusDisplay.style.color = colorStatus;
+            document.getElementById('total-income-display').style.color = colorStatus;
 
             let ratio = income > 0 ? Math.round((surplus / income) * 100) : 0;
             let ratioDisplay = document.getElementById('ratio-display');
             ratioDisplay.innerText = ratio + '%';
-            ratioDisplay.style.color = ratio >= 0 ? 'var(--accent-green)' : '#e53935';
+            ratioDisplay.style.color = colorStatus;
+
+            // تحديث الملاحظة السفلية حسب الحالة
+            let footerMessage = document.getElementById('footer-message');
+            if (surplus < 0) {
+                footerMessage.innerText = "تحذير: أنت في حالة عجز مالي! هذا الدخل لا يكفي لتغطية مصاريفك الأساسية.";
+                footerMessage.style.backgroundColor = "rgba(229, 57, 53, 0.1)";
+                footerMessage.style.borderColor = "rgba(229, 57, 53, 0.3)";
+                footerMessage.style.color = "var(--accent-red)";
+            } else if (surplus > 0 && surplus < 150000) {
+                footerMessage.innerText = "أنت تغطي مصاريفك، لكن التوفير قليل جداً وقد لا يغطي القسط بالوقت المحدد.";
+                footerMessage.style.backgroundColor = "rgba(253, 226, 147, 0.1)";
+                footerMessage.style.borderColor = "rgba(253, 226, 147, 0.3)";
+                footerMessage.style.color = "var(--color-bike)";
+            } else {
+                footerMessage.innerText = "ممتاز! أنت الآن في منطقة الأمان وتحقق توفيراً كافياً للقسط.";
+                footerMessage.style.backgroundColor = "rgba(91, 185, 116, 0.1)";
+                footerMessage.style.borderColor = "rgba(91, 185, 116, 0.3)";
+                footerMessage.style.color = "var(--accent-green)";
+            }
 
             // حساب وتحديث نسب الفئات والشريط اللوني
             if(income > 0) {
-                let housingRatio = (totalHousing / income) * 100;
-                let foodRatio = (totalFood / income) * 100;
-                let bikeRatio = (totalBike / income) * 100;
+                // إذا كان هناك خسارة، نحسب عرض الشريط بناءً على إجمالي المصاريف حتى لا يخرج عن الإطار
+                let barBase = income > totalExpenses ? income : totalExpenses;
+                
+                let housingRatioText = (totalHousing / income) * 100;
+                let foodRatioText = (totalFood / income) * 100;
+                let bikeRatioText = (totalBike / income) * 100;
 
-                document.getElementById('ratio-housing').innerText = Math.round(housingRatio) + '%';
-                document.getElementById('ratio-food').innerText = Math.round(foodRatio) + '%';
-                document.getElementById('ratio-bike').innerText = Math.round(bikeRatio) + '%';
+                document.getElementById('ratio-housing').innerText = Math.round(housingRatioText) + '%';
+                document.getElementById('ratio-food').innerText = Math.round(foodRatioText) + '%';
+                document.getElementById('ratio-bike').innerText = Math.round(bikeRatioText) + '%';
 
-                document.getElementById('bar-housing').style.width = housingRatio + '%';
-                document.getElementById('bar-food').style.width = foodRatio + '%';
-                document.getElementById('bar-bike').style.width = bikeRatio + '%';
+                document.getElementById('bar-housing').style.width = ((totalHousing / barBase) * 100) + '%';
+                document.getElementById('bar-food').style.width = ((totalFood / barBase) * 100) + '%';
+                document.getElementById('bar-bike').style.width = ((totalBike / barBase) * 100) + '%';
             } else {
                 document.getElementById('ratio-housing').innerText = '0%';
                 document.getElementById('ratio-food').innerText = '0%';
@@ -424,7 +449,7 @@
             }
         }
 
-        // تشغيل الدالة أول مرة عند فتح الصفحة لضبط القيم المبدئية
+        // تشغيل الدالة أول مرة
         window.onload = updateCalculations;
     </script>
 </body>
