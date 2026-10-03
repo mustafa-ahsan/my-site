@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>خطة ميزانية العمل (الواقع الجديد)</title>
+    <title>خطة ميزانية العمل المتقدمة</title>
     <style>
         :root {
             --bg-main: #131314;
@@ -12,6 +12,7 @@
             --text-muted: #9aa0a6;
             --accent-green: #5bb974;
             --accent-red: #e53935;
+            --accent-blue: #8ab4f8;
             --color-housing: #8ab4f8;
             --color-food: #81c995;
             --color-bike: #fde293;
@@ -78,6 +79,18 @@
             padding: 1.5rem;
             border-radius: 12px;
             border: 1px solid var(--border-color);
+        }
+        
+        .income-row {
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        
+        .income-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
         }
 
         /* شريط التقدم المرئي */
@@ -161,6 +174,14 @@
             align-items: center;
             gap: 10px;
         }
+        
+        .auto-box {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 10px;
+            border-radius: 6px;
+            width: 100%;
+            text-align: center;
+        }
 
         input[type=range] {
             flex: 1;
@@ -189,6 +210,7 @@
             border: none;
             color: white;
             outline: none;
+            font-weight: bold;
         }
 
         .footer-note {
@@ -197,10 +219,9 @@
             text-align: center;
             margin-top: 2rem;
             font-style: italic;
-            background-color: rgba(229, 57, 53, 0.1);
             padding: 10px;
             border-radius: 8px;
-            border: 1px solid rgba(229, 57, 53, 0.3);
+            border: 1px solid var(--border-color);
         }
 
         /* تعديلات للموبايل */
@@ -233,7 +254,7 @@
             </div>
         </div>
 
-        <!-- قسم الدخل المتغير -->
+        <!-- قسم الدخل المتغير والجدول المزدوج -->
         <div class="income-section">
             <div class="category-header" style="margin-bottom: 1.5rem;">
                 <div class="category-title" style="font-size: 1.1rem; font-weight: bold; color: var(--text-main);">
@@ -243,21 +264,55 @@
                     <strong id="total-income-display" style="font-size: 1.2rem;">0 د.ع</strong>
                 </div>
             </div>
-            <div class="slider-group" style="padding-right: 0;">
-                <!-- المدخل الجديد: سعر الطلب -->
-                <div class="slider-item">
-                    <span class="slider-label">سعر الطلب الواحد</span>
-                    <div class="slider-control">
-                        <input type="range" id="order-price" min="500" max="3000" step="50" value="1300" oninput="updateCalculations()">
-                        <div class="slider-value" style="font-weight: bold;"><span id="price-val">1,300</span> د.ع</div>
+            
+            <!-- سعر الطلب -->
+            <div class="income-row">
+                <div class="slider-group" style="padding-right: 0; margin-bottom: 0;">
+                    <div class="slider-item">
+                        <span class="slider-label">سعر الطلب الواحد</span>
+                        <div class="slider-control">
+                            <input type="range" id="order-price" min="500" max="3000" step="50" value="1300" oninput="updateCalculations()">
+                            <div class="slider-value"><span id="price-val">1,300</span> د.ع</div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="slider-item">
-                    <span class="slider-label">متوسط عدد الطلبات اليومية</span>
-                    <div class="slider-control">
-                        <input type="range" id="daily-orders" min="3" max="30" step="1" value="7" oninput="updateCalculations()">
-                        <div class="slider-value" style="font-weight: bold;"><span id="orders-val">7</span> طلبات</div>
+            </div>
+
+            <!-- أيام الجدول الأول (مثلاً أيام الدوام) -->
+            <div class="income-row">
+                <div class="slider-group" style="padding-right: 0; margin-bottom: 0;">
+                    <div class="slider-item">
+                        <span class="slider-label" style="color: var(--accent-blue);">الجدول 1: أيام الدوام بالأسبوع</span>
+                        <div class="slider-control">
+                            <input type="range" id="p1-days" min="0" max="7" step="1" value="3" oninput="updateCalculations()">
+                            <div class="slider-value" style="color: var(--accent-blue);"><span id="p1-days-val">3</span> أيام</div>
+                        </div>
+                    </div>
+                    <div class="slider-item">
+                        <span class="slider-label" style="color: var(--accent-blue);">متوسط الطلبات بهذا الجدول (يومياً)</span>
+                        <div class="slider-control">
+                            <input type="range" id="p1-orders" min="1" max="40" step="1" value="12" oninput="updateCalculations()">
+                            <div class="slider-value" style="color: var(--accent-blue);"><span id="p1-orders-val">12</span> طلب</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- أيام الجدول الثاني (باقي الأسبوع) -->
+            <div class="income-row">
+                <div class="slider-group" style="padding-right: 0; margin-bottom: 0;">
+                    <div class="slider-item">
+                        <span class="slider-label" style="color: var(--accent-green);">الجدول 2: باقي أيام الأسبوع (تلقائي)</span>
+                        <div class="slider-control auto-box">
+                            <div class="slider-value" style="color: var(--accent-green); width: 100%; text-align: center;"><span id="p2-days-val">4</span> أيام</div>
+                        </div>
+                    </div>
+                    <div class="slider-item">
+                        <span class="slider-label" style="color: var(--accent-green);">متوسط الطلبات بهذا الجدول (يومياً)</span>
+                        <div class="slider-control">
+                            <input type="range" id="p2-orders" min="1" max="40" step="1" value="18" oninput="updateCalculations()">
+                            <div class="slider-value" style="color: var(--accent-green);"><span id="p2-orders-val">18</span> طلب</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -356,7 +411,7 @@
         </div>
 
         <div class="footer-note" id="footer-message">
-            تنبيه: حرك مؤشر "عدد الطلبات" أو "سعر الطلب" لمعرفة نقطة التعادل وتغطية المصاريف!
+            المتوسط اليومي للطلبات هو: <span id="avg-daily-orders" style="font-weight: bold; color: var(--text-main);">0</span> طلب/يوم.
         </div>
 
     </div>
@@ -369,17 +424,28 @@
 
         // دالة الحسابات وتحديث الواجهة
         function updateCalculations() {
-            // جلب قيمة الطلبات اليومية وسعر الطلب
-            let dailyOrders = parseInt(document.getElementById('daily-orders').value);
+            // جلب قيم الدخل والطلبات
             let orderPrice = parseInt(document.getElementById('order-price').value);
+            let p1Days = parseInt(document.getElementById('p1-days').value);
+            let p1Orders = parseInt(document.getElementById('p1-orders').value);
+            let p2Orders = parseInt(document.getElementById('p2-orders').value);
             
-            // حساب الدخل الشهري (الطلبات × السعر × 30 يوم)
-            let income = dailyOrders * orderPrice * 30; 
+            // حساب أيام الجدول الثاني تلقائياً (7 أيام - أيام الجدول الأول)
+            let p2Days = 7 - p1Days;
             
-            // تحديث نصوص الدخل
-            document.getElementById('orders-val').innerText = dailyOrders;
+            // حساب إجمالي طلبات الأسبوع، ثم المتوسط اليومي، ثم الدخل الشهري
+            let weeklyOrders = (p1Days * p1Orders) + (p2Days * p2Orders);
+            let averageDailyOrders = weeklyOrders / 7;
+            let income = averageDailyOrders * orderPrice * 30;
+            
+            // تحديث نصوص قسم الدخل
             document.getElementById('price-val').innerText = formatNumber(orderPrice);
-            document.getElementById('total-income-display').innerText = formatNumber(income) + ' د.ع';
+            document.getElementById('p1-days-val').innerText = p1Days;
+            document.getElementById('p1-orders-val').innerText = p1Orders;
+            document.getElementById('p2-days-val').innerText = p2Days;
+            document.getElementById('p2-orders-val').innerText = p2Orders;
+            document.getElementById('total-income-display').innerText = formatNumber(Math.round(income)) + ' د.ع';
+            document.getElementById('avg-daily-orders').innerText = averageDailyOrders.toFixed(1);
 
             // جلب قيم المصاريف
             let rent = parseInt(document.getElementById('rent').value);
@@ -391,7 +457,7 @@
             // حساب المعيشة الشهري
             let totalFood = dailyFood * 30;
 
-            // تحديث نصوص السلايدرات
+            // تحديث نصوص المصاريف
             document.getElementById('rent-val').innerText = formatNumber(rent);
             document.getElementById('internet-val').innerText = formatNumber(internet);
             document.getElementById('food-val').innerText = formatNumber(dailyFood);
@@ -413,9 +479,9 @@
             document.getElementById('total-expenses-display').innerText = formatNumber(totalExpenses) + ' د.ع';
             
             let surplusDisplay = document.getElementById('surplus-display');
-            surplusDisplay.innerText = formatNumber(surplus) + ' د.ع';
+            surplusDisplay.innerText = formatNumber(Math.round(surplus)) + ' د.ع';
             
-            // تلوين الفائض والنسبة بالأحمر في حالة الخسارة، وبالأخضر في حالة الربح
+            // تلوين الفائض والنسبة والملاحظات
             let colorStatus = surplus >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
             surplusDisplay.style.color = colorStatus;
             document.getElementById('total-income-display').style.color = colorStatus;
@@ -425,28 +491,20 @@
             ratioDisplay.innerText = ratio + '%';
             ratioDisplay.style.color = colorStatus;
 
-            // تحديث الملاحظة السفلية حسب الحالة
             let footerMessage = document.getElementById('footer-message');
             if (surplus < 0) {
-                footerMessage.innerText = "تحذير: أنت في حالة عجز مالي! هذا الدخل لا يكفي لتغطية مصاريفك الأساسية.";
                 footerMessage.style.backgroundColor = "rgba(229, 57, 53, 0.1)";
                 footerMessage.style.borderColor = "rgba(229, 57, 53, 0.3)";
-                footerMessage.style.color = "var(--accent-red)";
             } else if (surplus > 0 && surplus < 150000) {
-                footerMessage.innerText = "أنت تغطي مصاريفك، لكن التوفير قليل جداً وقد لا يغطي القسط بالوقت المحدد.";
                 footerMessage.style.backgroundColor = "rgba(253, 226, 147, 0.1)";
                 footerMessage.style.borderColor = "rgba(253, 226, 147, 0.3)";
-                footerMessage.style.color = "var(--color-bike)";
             } else {
-                footerMessage.innerText = "ممتاز! أنت الآن في منطقة الأمان وتحقق توفيراً كافياً للقسط.";
                 footerMessage.style.backgroundColor = "rgba(91, 185, 116, 0.1)";
                 footerMessage.style.borderColor = "rgba(91, 185, 116, 0.3)";
-                footerMessage.style.color = "var(--accent-green)";
             }
 
             // حساب وتحديث نسب الفئات والشريط اللوني
             if(income > 0) {
-                // إذا كان هناك خسارة، نحسب عرض الشريط بناءً على إجمالي المصاريف حتى لا يخرج عن الإطار
                 let barBase = income > totalExpenses ? income : totalExpenses;
                 
                 let housingRatioText = (totalHousing / income) * 100;
