@@ -140,7 +140,7 @@
         .slider-group {
             display: flex;
             justify-content: space-between;
-            gap: 2rem;
+            gap: 1.5rem;
             margin-bottom: 1rem;
             padding-right: 18px;
         }
@@ -159,7 +159,7 @@
         .slider-control {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
         }
 
         input[type=range] {
@@ -183,7 +183,7 @@
 
         .slider-value {
             font-size: 0.9rem;
-            min-width: 90px;
+            min-width: 80px;
             text-align: left;
             background: transparent;
             border: none;
@@ -201,6 +201,15 @@
             padding: 10px;
             border-radius: 8px;
             border: 1px solid rgba(229, 57, 53, 0.3);
+        }
+
+        /* تعديلات للموبايل */
+        @media (max-width: 600px) {
+            .slider-group {
+                flex-direction: column;
+                gap: 1.5rem;
+                padding-right: 0;
+            }
         }
 
     </style>
@@ -224,22 +233,30 @@
             </div>
         </div>
 
-        <!-- قسم الدخل المتغير (عدد الطلبات) -->
+        <!-- قسم الدخل المتغير -->
         <div class="income-section">
             <div class="category-header" style="margin-bottom: 1.5rem;">
                 <div class="category-title" style="font-size: 1.1rem; font-weight: bold; color: var(--text-main);">
-                    الدخل الشهري المتوقع (سعر الطلب 1,300 د.ع)
+                    الدخل الشهري المتوقع
                 </div>
                 <div class="category-stats">
                     <strong id="total-income-display" style="font-size: 1.2rem;">0 د.ع</strong>
                 </div>
             </div>
             <div class="slider-group" style="padding-right: 0;">
+                <!-- المدخل الجديد: سعر الطلب -->
                 <div class="slider-item">
-                    <span class="slider-label">متوسط عدد الطلبات اليومية (حرك المؤشر)</span>
+                    <span class="slider-label">سعر الطلب الواحد</span>
                     <div class="slider-control">
-                        <!-- التعديل هنا: الحد الأدنى 3، والافتراضي 7 بناءً على المعلومة الجديدة -->
-                        <input type="range" id="daily-orders" min="3" max="25" step="1" value="7" oninput="updateCalculations()">
+                        <input type="range" id="order-price" min="500" max="3000" step="50" value="1300" oninput="updateCalculations()">
+                        <div class="slider-value" style="font-weight: bold;"><span id="price-val">1,300</span> د.ع</div>
+                    </div>
+                </div>
+                
+                <div class="slider-item">
+                    <span class="slider-label">متوسط عدد الطلبات اليومية</span>
+                    <div class="slider-control">
+                        <input type="range" id="daily-orders" min="3" max="30" step="1" value="7" oninput="updateCalculations()">
                         <div class="slider-value" style="font-weight: bold;"><span id="orders-val">7</span> طلبات</div>
                     </div>
                 </div>
@@ -339,7 +356,7 @@
         </div>
 
         <div class="footer-note" id="footer-message">
-            تنبيه: حرك مؤشر "عدد الطلبات اليومية" لليمين لمعرفة كم طلب تحتاج بالضبط لتغطية مصاريفك وبدء توفير القسط!
+            تنبيه: حرك مؤشر "عدد الطلبات" أو "سعر الطلب" لمعرفة نقطة التعادل وتغطية المصاريف!
         </div>
 
     </div>
@@ -352,11 +369,16 @@
 
         // دالة الحسابات وتحديث الواجهة
         function updateCalculations() {
-            // جلب قيمة الطلبات اليومية وحساب الدخل (على أساس 1300 دينار للطلب)
+            // جلب قيمة الطلبات اليومية وسعر الطلب
             let dailyOrders = parseInt(document.getElementById('daily-orders').value);
-            let income = dailyOrders * 1300 * 30; 
+            let orderPrice = parseInt(document.getElementById('order-price').value);
             
+            // حساب الدخل الشهري (الطلبات × السعر × 30 يوم)
+            let income = dailyOrders * orderPrice * 30; 
+            
+            // تحديث نصوص الدخل
             document.getElementById('orders-val').innerText = dailyOrders;
+            document.getElementById('price-val').innerText = formatNumber(orderPrice);
             document.getElementById('total-income-display').innerText = formatNumber(income) + ' د.ع';
 
             // جلب قيم المصاريف
